@@ -1,3 +1,5 @@
+require 'action_cable_notifications/callbacks.rb'
+
 module ActionCableNotifications
   class Engine < ::Rails::Engine
     isolate_namespace ActionCableNotifications
