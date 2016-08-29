@@ -1,7 +1,7 @@
 # ActionCableNotifications
 [![Gem Version](https://badge.fury.io/rb/action_cable_notifications.svg)](https://badge.fury.io/rb/action_cable_notifications)
 
-Short description and motivation.
+This gem is under develoment and is not ready for production usage.
 
 ## Usage
 How to use my plugin.
