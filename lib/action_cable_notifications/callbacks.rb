@@ -3,24 +3,31 @@ module ActionCableNotifications
     extend ActiveSupport::Concern
 
     included do
+      # Options
+      class_attribute :ActionCableNotificationsOptions
+      self.ActionCableNotificationsOptions = {}
+
       after_update :notify_update
       after_create :notify_create
       after_destroy :notify_destroy
     end
 
     module ClassMethods
-      def notify_initial( collection=nil )
-        collection ||= self
+      def set_action_cable_notification_options( options = {} )
+        self.ActionCableNotificationsOptions = options
+      end
+
+      def notify_initial
         data = {
           collection: self.model_name.collection,
           msg: 'add',
-          data: collection.all
+          data: self.all
         }
       end
     end
 
     def notify_create
-      ActionCable.server.broadcast self.model_name.collection,
+      ActionCable.server.broadcast self.ActionCableNotificationsOptions[:broadcast_name],
         collection: self.model_name.collection,
         msg: 'create',
         id: self.id,
@@ -33,7 +40,7 @@ module ActionCableNotifications
         changes[k] = v[1]
       end
 
-      ActionCable.server.broadcast self.model_name.collection,
+      ActionCable.server.broadcast self.ActionCableNotificationsOptions[:broadcast_name],
         collection: self.model_name.collection,
         msg: 'update',
         id: self.id,
@@ -41,7 +48,7 @@ module ActionCableNotifications
     end
 
     def notify_destroy
-      ActionCable.server.broadcast self.model_name.collection,
+      ActionCable.server.broadcast self.ActionCableNotificationsOptions[:broadcast_name],
         collection: self.model_name.collection,
         msg: 'destroy',
         id: self.id

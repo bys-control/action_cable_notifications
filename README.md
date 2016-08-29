@@ -32,7 +32,7 @@ class TestChannel < ApplicationCable::Channel
   include ActionCableNotifications::Streams
 
   def subscribed
-    stream_for model, include_initial: true
+    stream_notifications_for model, include_initial: true
   end
 
   def unsubscribed
