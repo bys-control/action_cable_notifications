@@ -1,4 +1,6 @@
 # ActionCableNotifications
+[![Gem Version](https://badge.fury.io/rb/action_cable_notifications.svg)](https://badge.fury.io/rb/action_cable_notifications)
+
 Short description and motivation.
 
 ## Usage
