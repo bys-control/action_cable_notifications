@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.authors     = ["ByS Sistemas de Control"]
   s.email       = ["info@bys-control.com.ar"]
   s.homepage    = "https://github.com/bys-control/action_cable_notifications"
-  s.summary     = "Realtime notification broadcast for Ruby on Rails models changes using Action Cable and websockets"
+  s.summary     = "Automatic realtime notification broadcast for ActiveRecord models changes using Action Cable and websockets"
   s.description = "Rails engine that provides automatic notification broadcasts for Ruby on Rails models changes using Action Cable and websockets"
   s.license     = "MIT"
 

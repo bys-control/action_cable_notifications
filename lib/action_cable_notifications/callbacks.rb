@@ -13,25 +13,42 @@ module ActionCableNotifications
     end
 
     module ClassMethods
-      def set_action_cable_notification_options( options = {} )
-        self.ActionCableNotificationsOptions = options
+      # Options setter
+      def action_cable_notification_options= ( broadcasting, options = nil )
+        if options.present?
+          self.ActionCableNotificationsOptions[broadcasting.to_sym] = options
+        else
+          self.ActionCableNotificationsOptions.except! broadcasting.to_sym
+        end
       end
 
-      def notify_initial
-        data = {
+      # Options getter
+      def action_cable_notification_options ( broadcasting )
+        if broadcasting.present?
+          self.ActionCableNotificationsOptions[broadcasting.to_sym]
+        else
+          self.ActionCableNotificationsOptions
+        end
+      end
+
+      def notify_initial ( broadcasting )
+        options = self.action_cable_notification_options( broadcasting )
+        {
           collection: self.model_name.collection,
-          msg: 'add',
-          data: self.all
+          msg: 'add_collection',
+          data: Array(options[:scope]).inject(self) {|o, a| o.try(*a)}
         }
       end
     end
 
     def notify_create
-      ActionCable.server.broadcast self.ActionCableNotificationsOptions[:broadcast_name],
-        collection: self.model_name.collection,
-        msg: 'create',
-        id: self.id,
-        fields: self
+      self.ActionCableNotificationsOptions.each do |broadcasting, options|
+        ActionCable.server.broadcast broadcasting,
+          collection: self.model_name.collection,
+          msg: 'create',
+          id: self.id,
+          data: self
+      end
     end
 
     def notify_update
@@ -40,18 +57,22 @@ module ActionCableNotifications
         changes[k] = v[1]
       end
 
-      ActionCable.server.broadcast self.ActionCableNotificationsOptions[:broadcast_name],
-        collection: self.model_name.collection,
-        msg: 'update',
-        id: self.id,
-        fields: changes
+      self.ActionCableNotificationsOptions.each do |broadcasting, options|
+        ActionCable.server.broadcast broadcasting,
+          collection: self.model_name.collection,
+          msg: 'update',
+          id: self.id,
+          data: changes
+      end
     end
 
     def notify_destroy
-      ActionCable.server.broadcast self.ActionCableNotificationsOptions[:broadcast_name],
-        collection: self.model_name.collection,
-        msg: 'destroy',
-        id: self.id
+      self.ActionCableNotificationsOptions.each do |broadcasting, options|
+        ActionCable.server.broadcast broadcasting,
+          collection: self.model_name.collection,
+          msg: 'destroy',
+          id: self.id
+      end
     end
   end
 end
