@@ -45,8 +45,6 @@ module ActionCableNotifications
       end
     end
 
-    private
-
     def notify_create
       self.ActionCableNotificationsOptions.each do |broadcasting, options|
         # Checks if record is within scope before broadcasting
@@ -89,5 +87,6 @@ module ActionCableNotifications
         end
       end
     end
+
   end
 end
