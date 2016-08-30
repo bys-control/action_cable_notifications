@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.email       = ["info@bys-control.com.ar"]
   s.homepage    = "https://github.com/bys-control/action_cable_notifications"
   s.summary     = "Automatic realtime notification broadcast for ActiveRecord models changes using Action Cable and websockets"
-  s.description = "Rails engine that provides automatic notification broadcasts for Ruby on Rails models changes using Action Cable and websockets"
+  s.description = "Rails engine that provides Automatic realtime notification broadcast for ActiveRecord models changes using Action Cable and websockets"
   s.license     = "MIT"
 
   s.files = Dir["{app,config,db,lib}/**/*", "MIT-LICENSE", "Rakefile", "README.md"]
