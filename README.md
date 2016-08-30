@@ -24,7 +24,7 @@ $ gem install action_cable_notifications
 ```
 
 ## Usage
-Create a new channel (`rails g cahnnel Test`) or modify existing one including `ActionCableNotifications::Streams` module. 
+On **server-side**, create a new channel (`rails g cahnnel Test`) or modify existing one including `ActionCableNotifications::Streams` module. 
 
 ```ruby
 class TestChannel < ApplicationCable::Channel
@@ -32,7 +32,7 @@ class TestChannel < ApplicationCable::Channel
   include ActionCableNotifications::Streams
 
   def subscribed
-    stream_notifications_for model, include_initial: true, scope: [:all, [:limit, 5], [:order, :id]]
+    stream_notifications_for Users, include_initial: true, scope: [:all, [:limit, 5], [:order, :id]]
   end
 
   def unsubscribed
@@ -41,7 +41,7 @@ class TestChannel < ApplicationCable::Channel
 end
 ```
 
-Method stream_notifications_for receives the following parameters: 
+Method `stream_notifications_for` receives the following parameters: 
 
 ```ruby
 stream_notifications_for(model, options = {}, &block)
@@ -62,6 +62,63 @@ stream_notifications_for(model, options = {}, &block)
 }
 ```
 * block: **(Proc)** - Same as options[:callback]
+
+On **client-side**, use action_cable subscriptions as stated in the documentation. Received data will have the following format:
+
+### Initial values for collection
+```javascript
+{
+  collection: 'users',
+  msg: 'add_collection',
+  data: [
+    {
+      id: 1,
+      username: 'username 1',
+      color: 'red'
+    },
+    {
+      id: 2,
+      username: 'username 2',
+      color: 'green'
+  ]
+}
+```
+
+### Create event
+```javascript
+{
+  collection: 'users',
+  msg: 'create',
+  id: 3,
+  data: {
+    id: 3,
+    username: 'username 3'
+    color: 'blue'
+  }
+}
+```
+
+### Update event
+Update event will only transmit changed fields for the model.
+```javascript
+{
+  collection: 'users',
+  msg: 'update',
+  id: 2,
+  data: {
+    color: 'light blue'
+  }
+}
+```
+
+### Destroy event
+```javascript
+{
+  collection: 'users',
+  msg: 'destroy',
+  id: 2
+}
+```
 
 ## Contributing
 Contribution directions go here.
