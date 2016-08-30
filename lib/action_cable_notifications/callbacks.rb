@@ -31,23 +31,32 @@ module ActionCableNotifications
         end
       end
 
+      def scoped_collection ( scope )
+        Array(Array(scope).inject(self) {|o, a| o.try(*a)})
+      end
+
       def notify_initial ( broadcasting )
         options = self.action_cable_notification_options( broadcasting )
         {
           collection: self.model_name.collection,
           msg: 'add_collection',
-          data: Array(options[:scope]).inject(self) {|o, a| o.try(*a)}
+          data: self.scoped_collection(options[:scope])
         }
       end
     end
 
+    private
+
     def notify_create
       self.ActionCableNotificationsOptions.each do |broadcasting, options|
-        ActionCable.server.broadcast broadcasting,
-          collection: self.model_name.collection,
-          msg: 'create',
-          id: self.id,
-          data: self
+        # Checks if record is within scope before broadcasting
+        if self.class.scoped_collection(options[:scope]).include? self
+          ActionCable.server.broadcast broadcasting,
+            collection: self.model_name.collection,
+            msg: 'create',
+            id: self.id,
+            data: self
+        end
       end
     end
 
@@ -58,20 +67,26 @@ module ActionCableNotifications
       end
 
       self.ActionCableNotificationsOptions.each do |broadcasting, options|
-        ActionCable.server.broadcast broadcasting,
-          collection: self.model_name.collection,
-          msg: 'update',
-          id: self.id,
-          data: changes
+        # Checks if record is within scope before broadcasting
+        if self.class.scoped_collection(options[:scope]).include? self
+          ActionCable.server.broadcast broadcasting,
+            collection: self.model_name.collection,
+            msg: 'update',
+            id: self.id,
+            data: changes
+        end
       end
     end
 
     def notify_destroy
       self.ActionCableNotificationsOptions.each do |broadcasting, options|
-        ActionCable.server.broadcast broadcasting,
-          collection: self.model_name.collection,
-          msg: 'destroy',
-          id: self.id
+        # Checks if record is within scope before broadcasting
+        if self.class.scoped_collection(options[:scope]).include? self
+          ActionCable.server.broadcast broadcasting,
+            collection: self.model_name.collection,
+            msg: 'destroy',
+            id: self.id
+        end
       end
     end
   end
