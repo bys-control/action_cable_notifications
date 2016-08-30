@@ -8,13 +8,14 @@ module ActionCableNotifications
 
     private
 
-    def stream_notifications_for(model, callback = nil, options = {}, &block)
+    def stream_notifications_for(model, options = {}, &block)
       @model = model
 
       # Default options
       @options = {
         actions: [:create, :update, :destroy],
         broadcasting: model.model_name.collection,
+        callback: nil,
         coder: nil,
         include_initial: false, # Send all records to the subscriber on connection
         params: params,
@@ -30,7 +31,7 @@ module ActionCableNotifications
       @model.send('action_cable_notification_options=', @options[:broadcasting], @options)
 
       # Start streaming
-      stream_from(@options[:broadcasting], callback || block, @options.slice(:coder))
+      stream_from(@options[:broadcasting], options[:callback] || block, @options.slice(:coder))
 
       # Transmit initial state if required
       if @options[:include_initial]
