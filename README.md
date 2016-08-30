@@ -1,29 +1,11 @@
 # ActionCableNotifications
 [![Gem Version](https://badge.fury.io/rb/action_cable_notifications.svg)](https://badge.fury.io/rb/action_cable_notifications)
 
-This gem is under develoment and is not ready for production usage.
+**This gem is being developed as part of an internal proyect. It's constantly changing and is not ready for production usage. Use at your own risk!!**
 
 ## Usage
-How to use my plugin.
 
-## Installation
-Add this line to your application's Gemfile:
-
-```ruby
-gem 'action_cable_notifications'
-```
-
-And then execute:
-```bash
-$ bundle
-```
-
-Or install it yourself as:
-```bash
-$ gem install action_cable_notifications
-```
-
-## Usage
+### Server side
 On **server-side**, create a new channel (`rails g cahnnel Test`) or modify existing one including `ActionCableNotifications::Streams` module. 
 
 ```ruby
@@ -63,9 +45,10 @@ stream_notifications_for(model, options = {}, &block)
 ```
 * block: **(Proc)** - Same as options[:callback]
 
+### Client side
 On **client-side**, use action_cable subscriptions as stated in the documentation. Received data will have the following format:
 
-### Initial values for collection
+#### Initial values for collection
 ```javascript
 {
   collection: 'users',
@@ -84,7 +67,7 @@ On **client-side**, use action_cable subscriptions as stated in the documentatio
 }
 ```
 
-### Create event
+#### Create event
 ```javascript
 {
   collection: 'users',
@@ -98,7 +81,7 @@ On **client-side**, use action_cable subscriptions as stated in the documentatio
 }
 ```
 
-### Update event
+#### Update event
 Update event will only transmit changed fields for the model.
 ```javascript
 {
@@ -111,7 +94,7 @@ Update event will only transmit changed fields for the model.
 }
 ```
 
-### Destroy event
+#### Destroy event
 ```javascript
 {
   collection: 'users',
@@ -120,8 +103,25 @@ Update event will only transmit changed fields for the model.
 }
 ```
 
+## Installation
+Add this line to your application's Gemfile:
+
+```ruby
+gem 'action_cable_notifications'
+```
+
+And then execute:
+```bash
+$ bundle
+```
+
+Or install it yourself as:
+```bash
+$ gem install action_cable_notifications
+```
+
 ## Contributing
-Contribution directions go here.
+Contributions are welcome. We will be happy to receive issues, comments and pull-request to make this gem better.
 
 ## License
 The gem is available as open source under the terms of the [MIT License](http://opensource.org/licenses/MIT).
