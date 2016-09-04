@@ -22,17 +22,13 @@ module ActionCableNotifications
       # @param [hash] options Hash containing notification options
       #
       def broadcast_notifications_from ( broadcasting, options = nil )
-        if options.present?
-          # Default options
-          options = {
-            actions: [:create, :update, :destroy],
-            scope: :all             # Default collection scope
-            }.merge(options)
+        # Default options
+        options = {
+          actions: [:create, :update, :destroy],
+          scope: :all             # Default collection scope
+          }.merge(options)
 
-          self.ActionCableNotificationsOptions[broadcasting.to_sym] = options
-        else
-          self.ActionCableNotificationsOptions.except! broadcasting.to_sym
-        end
+        self.ActionCableNotificationsOptions[broadcasting.to_s] = options
       end
 
       #
@@ -59,7 +55,7 @@ module ActionCableNotifications
       #   data: self.scoped_collection(options[:scope])
       # }
       def notify_initial ( broadcasting )
-        options = self.ActionCableNotificationsOptions[broadcasting.to_sym]
+        options = self.ActionCableNotificationsOptions[broadcasting.to_s]
         if options.present?
           {
             collection: self.model_name.collection,
