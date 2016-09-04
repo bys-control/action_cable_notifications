@@ -21,7 +21,7 @@ module ActionCableNotifications
       # @param [sym] broadcasting Topic name to broadcast in
       # @param [hash] options Hash containing notification options
       #
-      def broadcast_notifications_from ( broadcasting, options = nil )
+      def broadcast_notifications_from ( broadcasting, options = {} )
         # Default options
         options = {
           actions: [:create, :update, :destroy],
@@ -39,7 +39,7 @@ module ActionCableNotifications
       #
       # @return [ActiveRecordRelation] Results fetched from the database
       #
-      def scoped_collection ( scope=:all )
+      def scoped_collection ( scope = :all )
         Array(scope).inject(self) {|o, a| o.try(*a)}
       end
 
