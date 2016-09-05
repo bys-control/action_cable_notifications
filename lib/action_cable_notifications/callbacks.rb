@@ -76,7 +76,7 @@ module ActionCableNotifications
           if self.class.scoped_collection(options[:scope]).where(id: self.id)
             ActionCable.server.broadcast broadcasting,
               collection: self.model_name.collection,
-              msg: 'added',
+              msg: 'create',
               id: self.id,
               data: self
           end
@@ -106,7 +106,7 @@ module ActionCableNotifications
             # performance for large data sets where only a sub
             ActionCable.server.broadcast broadcasting,
               collection: self.model_name.collection,
-              msg: 'changed',
+              msg: 'update',
               id: self.id,
               data: changes
           end
@@ -124,7 +124,7 @@ module ActionCableNotifications
           if self.class.scoped_collection(options[:scope]).where(id: self.id)
             ActionCable.server.broadcast broadcasting,
               collection: self.model_name.collection,
-              msg: 'removed',
+              msg: 'destroy',
               id: self.id
           end
         end

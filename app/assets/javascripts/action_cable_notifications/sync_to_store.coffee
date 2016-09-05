@@ -43,21 +43,28 @@ class CableNotifications
     collection_remove: (packet, collection) ->
       console.warn 'Method not implemented: collection_remove '
 
-    added: (packet, collection) ->
+    create: (packet, collection) ->
       data = processPacketHelper(packet, collection)
       if data.record
         console.warn 'Expected not to find a document already present for an add: ' + data.record
       else
         data.collection.push(packet.data)
 
-    changed: (packet, collection) ->
+    update: (packet, collection) ->
       data = processPacketHelper(packet, collection)
       if !data.record
         console.warn 'Expected to find a document to change'
       else if !_.isEmpty(packet.data)
         _.extend(data.record, packet.data)
 
-    removed: (packet, collection) ->
+    update_many: (packet, collection) ->
+      local_collection = @collections[collection || packet.collection]
+      _.each packet.data, (fields) ->
+        record = _.findIndex(local_collection, (r) -> r.id == fields.id)
+        if record
+          _.extend(local_collection[index], fields)
+
+    destroy: (packet, collection) ->
       data = processPacketHelper(packet, collection)
       if !data.record
         console.warn 'Expected to find a document to remove'
