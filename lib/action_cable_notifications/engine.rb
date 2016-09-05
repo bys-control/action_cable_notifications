@@ -1,3 +1,4 @@
+require 'lodash-rails'
 require 'action_cable_notifications/callbacks.rb'
 require 'action_cable_notifications/streams.rb'
 
