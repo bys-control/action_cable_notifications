@@ -38,7 +38,8 @@ class CableNotifications
       @collections[collection] = []
 
     collection_add: (packet, collection) ->
-      @collections[collection || packet.collection] = packet.data
+      for index, row of packet.data
+        @collections[collection || packet.collection].push( row )
 
     collection_remove: (packet, collection) ->
       console.warn 'Method not implemented: collection_remove '
