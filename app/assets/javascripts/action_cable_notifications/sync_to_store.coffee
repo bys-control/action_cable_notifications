@@ -38,8 +38,13 @@ class CableNotifications
       @collections[collection] = []
 
     collection_add: (packet, collection) ->
-      for index, row of packet.data
-        @collections[collection || packet.collection].push( row )
+      local_collection = @collections[collection || packet.collection]
+      _.each packet.data, (fields) ->
+        record = _.findIndex(local_collection, (r) -> r.id == fields.id)
+        if record>=0
+          _.extend(local_collection[record], fields)
+        else
+          local_collection.push(fields)
 
     collection_remove: (packet, collection) ->
       console.warn 'Method not implemented: collection_remove '
@@ -62,8 +67,10 @@ class CableNotifications
       local_collection = @collections[collection || packet.collection]
       _.each packet.data, (fields) ->
         record = _.findIndex(local_collection, (r) -> r.id == fields.id)
-        if record
-          _.extend(local_collection[index], fields)
+        if record>=0
+          _.extend(local_collection[record], fields)
+        else
+          local_collection.push(fields)
 
     destroy: (packet, collection) ->
       data = processPacketHelper(packet, collection)
