@@ -3,7 +3,12 @@ module ActionCableNotifications
     extend ActiveSupport::Concern
 
     included do
+      attr_accessor :stream_notification_options
       # Actions to be done when the module is included
+    end
+
+    def get_initial_values
+      transmit self.stream_notification_options[:model].notify_initial self.stream_notification_options[:broadcasting]
     end
 
     private
@@ -11,6 +16,7 @@ module ActionCableNotifications
     def stream_notifications_for(model, options = {}, &block)
       # Default options
       options = {
+        model: model,
         actions: [:create, :update, :destroy],
         broadcasting: model.model_name.collection,
         callback: nil,
@@ -19,6 +25,9 @@ module ActionCableNotifications
         params: params,
         scope: :all             # Default collection scope
         }.merge(options)
+
+      # Sets channel options
+      self.stream_notification_options = options
 
       # Checks if model already includes notification callbacks
       if !model.respond_to? :ActionCableNotificationsOptions
@@ -37,7 +46,7 @@ module ActionCableNotifications
       # Transmit initial state if required
       if options[:include_initial]
         # XXX: Check if data should be transmitted
-        transmit model.notify_initial options[:broadcasting]
+        get_initial_values
       end
 
     end

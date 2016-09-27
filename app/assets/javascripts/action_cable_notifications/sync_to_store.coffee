@@ -92,14 +92,20 @@ class CableNotifications
     processPacketHelper = processPacketHelper.bind(this)
 
   # Registers a new store
-  registerStore: (collection, callbacks) ->
+  registerStore: (collection, channel, callbacks) ->
     if callbacks
       registered_stores[collection] = callbacks
     else
       registered_stores[collection] = default_callbacks
 
     # Initialize registered store
-    registered_stores[collection].initialize?(collection)
+    store = registered_stores[collection].initialize?(collection)
+
+    # If ActionCable channel is specified, get initial values for subcription
+    if channel
+      channel.perform?("get_initial_values")
+
+    store
 
   # Dispatch received packet to registered stores
   storePacket: (packet, collection) ->
