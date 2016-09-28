@@ -10,7 +10,8 @@ class CableNotifications
   # Public variables
   #####################################
 
-  collections: null
+  # Default internal storage
+  collections: {}
 
   #
   # Private methods
@@ -112,6 +113,13 @@ class CableNotifications
     if packet && packet.msg
       for store, callbacks of registered_stores
         callbacks[packet.msg]?(packet, collection)
+
+  findRecord: (collection, id) ->
+    record = _.find(@collections[collection], (record) -> record.id == id)
+    if !record
+      record = {id: id, value: [0]}
+      @collections[collection].push record
+    record
 
 
 # Export to global namespace

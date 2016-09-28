@@ -1,1 +1,1 @@
-//= require_tree ./action_cable_notifications
+//= require ./action_cable_notifications/application
