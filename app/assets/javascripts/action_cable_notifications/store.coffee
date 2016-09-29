@@ -2,7 +2,7 @@
 #= require './default_callbacks'
 
 class CableNotifications.Store
-  constructor: (@name, @callbacks) ->
+  constructor: (@name, @options={}, @callbacks) ->
     @collections = {}
     @channels = {}
 
