@@ -59,7 +59,7 @@ module ActionCableNotifications
         if options.present?
           {
             collection: self.model_name.collection,
-            msg: 'collection_add',
+            msg: 'update_many',
             data: self.scoped_collection(options[:scope])
           }
         end

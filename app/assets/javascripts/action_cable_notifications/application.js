@@ -11,4 +11,4 @@
 // about supported directives.
 //
 //= require lodash
-//= require_tree .
+//= require ./cable_notifications
