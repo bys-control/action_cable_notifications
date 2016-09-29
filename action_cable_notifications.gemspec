@@ -20,4 +20,6 @@ Gem::Specification.new do |s|
   s.add_dependency "lodash-rails", "~> 4.15.0"
 
   s.add_development_dependency "sqlite3"
+  s.add_development_dependency 'pry'
+  s.add_development_dependency 'pry-byebug'
 end
