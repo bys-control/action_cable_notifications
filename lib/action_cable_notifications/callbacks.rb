@@ -40,7 +40,8 @@ module ActionCableNotifications
       # @return [ActiveRecordRelation] Results fetched from the database
       #
       def scoped_collection ( scope = :all )
-        Array(scope).inject(self) {|o, a| o.try(*a)}
+        scope = scope.to_a if scope.is_a? Hash
+        Array(scope).inject(self) {|o, a| o.try(*a)} rescue nil
       end
 
       #
