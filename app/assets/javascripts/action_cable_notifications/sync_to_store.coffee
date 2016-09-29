@@ -17,35 +17,35 @@ class CableNotifications
   # Private methods
   #####################################
 
-  processPacketHelper = (packet, collection) ->
-    local_collection = @collections[collection || packet.collection]
-    index = null
-    record = null
-
-    index = _.findIndex(local_collection, (record) -> record.id == packet.id)
-    if (index >= 0)
-      record = local_collection[index]
-
-    return {
-      collection: local_collection
-      index: index
-      record: record
-    }
-
   # Default callbacks for internal storage of received packets
   # Need to set include_initial: true in broadcasting options
-  default_callbacks =
+  class DefaultCallbacks
+    constructor: (@collections) ->
+
+    # Helper function
+    processPacketHelper = (packet, collection) ->
+      index = -1
+      record = null
+
+      local_collection = @collections[collection || packet.collection]
+      if !local_collection
+        console.warn("[update_many]: Collection #{collection_name} doesn't exist")
+      else
+        index = _.find(local_collection, (record) -> record.id == packet.id)
+        if (index >= 0)
+          record = local_collection[index]
+
+      return {
+        collection: local_collection
+        index: index
+        record: record
+      }
+
+    # Callbacks
+    ##################################################
+
     initialize: (collection) ->
       @collections[collection] = []
-
-    collection_add: (packet, collection) ->
-      local_collection = @collections[collection || packet.collection]
-      _.each packet.data, (fields) ->
-        record = _.findIndex(local_collection, (r) -> r.id == fields.id)
-        if record>=0
-          _.extend(local_collection[record], fields)
-        else
-          local_collection.push(fields)
 
     collection_remove: (packet, collection) ->
       console.warn 'Method not implemented: collection_remove '
@@ -65,13 +65,17 @@ class CableNotifications
         _.extend(data.record, packet.data)
 
     update_many: (packet, collection) ->
-      local_collection = @collections[collection || packet.collection]
-      _.each packet.data, (fields) ->
-        record = _.findIndex(local_collection, (r) -> r.id == fields.id)
-        if record>=0
-          _.extend(local_collection[record], fields)
-        else
-          local_collection.push(fields)
+      collection_name = collection || packet.collection
+      local_collection = @collections[collection_name]
+      if !local_collection
+        console.warn("[update_many]: Collection #{collection_name} doesn't exist")
+      else
+        _.each packet.data, (fields) ->
+          record = _.findIndex(local_collection, (r) -> r.id == fields.id)
+          if record>=0
+            _.extend(local_collection[record], fields)
+          else
+            local_collection.push(fields)
 
     destroy: (packet, collection) ->
       data = processPacketHelper(packet, collection)
@@ -85,28 +89,32 @@ class CableNotifications
   #####################################
   constructor: ->
     @collections = {}
+    @default_callbacks = new @DefaultCallbacks(@collections)
 
-    # Binds local methods and callbacks to this class
-    for name, callback of default_callbacks
-      default_callbacks[name] = callback.bind(this)
+    # Register internal store
+    @registerStore()
 
-    processPacketHelper = processPacketHelper.bind(this)
+  # Register a new store
+  registerStore: (store='default', callbacks) ->
+    if !registered_stores[store]
+      if callbacks
+        registered_stores[store] = callbacks
+      else
+        registered_stores[store] = default_callbacks
+    registered_stores[store]
 
-  # Registers a new store
-  registerStore: (collection, channel, callbacks) ->
-    if callbacks
-      registered_stores[collection] = callbacks
+  # Register a new collection into a store
+  registerCollection: (collection, channel, store='default') ->
+    if registered_stores[store]
+      # Initialize registered collection
+      new_collection = registered_stores[store].initialize?(collection)
+      # If ActionCable channel is specified, get initial values for subcription
+      if channel
+        channel.perform?("get_initial_values")
+      new_collection
     else
-      registered_stores[collection] = default_callbacks
-
-    # Initialize registered store
-    store = registered_stores[collection].initialize?(collection)
-
-    # If ActionCable channel is specified, get initial values for subcription
-    if channel
-      channel.perform?("get_initial_values")
-
-    store
+      console.warn("Store #{store} does not exist")
+      null
 
   # Dispatch received packet to registered stores
   storePacket: (packet, collection) ->
@@ -120,7 +128,6 @@ class CableNotifications
       record = {id: id, value: [0]}
       @collections[collection].push record
     record
-
 
 # Export to global namespace
 #######################################
