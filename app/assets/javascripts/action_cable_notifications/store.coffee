@@ -1,8 +1,6 @@
 #= require_self
 #= require './default_callbacks'
 
-console.log('store')
-
 class CableNotifications.Store
   constructor: (@name, @callbacks) ->
     @collections = {}
@@ -18,24 +16,25 @@ class CableNotifications.Store
 
   packetReceived = (channelInfo, collection) ->
     (packet) ->
-      storePacket(packet, collection)
-      channelInfo.callbacks.received.apply channelInfo.channel, arguments
+      @storePacket(packet, collection)
+      channelInfo.callbacks.received?.apply channelInfo.channel, arguments
 
   # Public methods
   #######################################
 
   # Register a new collection
   registerCollection: (collection) ->
-    if collections[collection]
+    if @collections[collection]
       console.warn '[registerCollection]: Collection already exists'
     else
-      collections[collection] = new CableNotifications.Collection(this, collection)
-    collections[collection]
+      @collections[collection] = new CableNotifications.Collection(this, collection)
+    @collections[collection]
 
   # Sync store using ActionCable received events
   # collection parameter overrides the collection name specified in the incoming packets for this channel
   syncToChannel: (channel, collection) ->
-    channelId = JSON.parse(channel.identifier).channel?
+    channelId = JSON.parse(channel.identifier)?.channel
+
     if !channelId
       console.warn "[syncToChannel]: Channel specified doesn't have an identifier"
     else

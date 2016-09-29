@@ -1,5 +1,3 @@
-console.log('collection')
-
 class CableNotifications.Collection
   constructor: (@store, @name) ->
     @data = []
@@ -37,3 +35,6 @@ class CableNotifications.Collection
   # http://docs.meteor.com/#/full/upsert
   upsert: (selector={}, fields) ->
     @update(selector, fields, {upsert: true})
+
+  filter: (selector={}) ->
+    _.filter(@data, selector)

@@ -1,5 +1,3 @@
-console.log('DefaultCallbacks')
-
 # Default callbacks for internal storage of received packets
 class CableNotifications.Store.DefaultCallbacks
   constructor: (@collections) ->
@@ -9,7 +7,7 @@ class CableNotifications.Store.DefaultCallbacks
     index = -1
     record = null
 
-    local_collection = @collections[collection || packet.collection]
+    local_collection = @collections[collection || packet.collection].data
     if !local_collection
       console.warn("[update_many]: Collection #{collection_name} doesn't exist")
     else
@@ -45,7 +43,7 @@ class CableNotifications.Store.DefaultCallbacks
 
   update_many: (packet, collection) ->
     collection_name = collection || packet.collection
-    local_collection = @collections[collection_name]
+    local_collection = @collections[collection_name].data
     if !local_collection
       console.warn("[update_many]: Collection #{collection_name} doesn't exist")
     else
