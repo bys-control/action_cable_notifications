@@ -14,6 +14,7 @@ class CableNotifications.Collection
 
   insert: (record) ->
     @data.push (record)
+    record
 
   remove: (selector={}) ->
     index = @findIndex(selector)
