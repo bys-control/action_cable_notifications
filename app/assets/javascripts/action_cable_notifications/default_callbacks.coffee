@@ -60,3 +60,6 @@ class CableNotifications.Store.DefaultCallbacks
       console.warn 'Expected to find a document to remove'
     else
       data.collection.splice(data.index, 1)
+
+  error: (packet, collection) ->
+    console.error packet

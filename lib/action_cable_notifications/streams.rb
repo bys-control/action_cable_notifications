@@ -71,20 +71,30 @@ module ActionCableNotifications
 
       record = model.find(options[:id]) rescue nil
 
+      result = nil
+      error = nil
+
       if record.present?
-        result = record.update_attributes(options[:fields]) rescue false
-
-        if !result
-          response = { collection: model.model_name.collection,
-            msg: 'error',
-            cmd: 'update',
-            error: record.errors.full_messages
-          }
-
-          # Send error notification to the client
-          transmit response
+        begin
+          result = record.update_attributes(options[:fields])
+        rescue Exception => e
+          error = e.message
         end
+      else
+        error = "There is no record with id: #{options[:id]}"
       end
+
+      if !result
+        response = { collection: model.model_name.collection,
+          msg: 'error',
+          cmd: 'update',
+          error: error || record.errors.full_messages
+        }
+
+        # Send error notification to the client
+        transmit response
+      end
+
     end
 
     #
