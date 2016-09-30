@@ -2,25 +2,6 @@
 class CableNotifications.Store.DefaultCallbacks
   constructor: (@collections) ->
 
-  # Helper function
-  processPacketHelper: (packet, collection) ->
-    index = -1
-    record = null
-
-    local_collection = @collections[collection || packet.collection].data
-    if !local_collection
-      console.warn("[#{packet.msg}]: Collection #{collection_name} doesn't exist")
-    else
-      index = _.findIndex(local_collection, (record) -> record.id == packet.id)
-      if (index >= 0)
-        record = local_collection[index]
-
-    return {
-      collection: local_collection
-      index: index
-      record: record
-    }
-
   # Callbacks
   ##################################################
 
@@ -28,38 +9,22 @@ class CableNotifications.Store.DefaultCallbacks
     console.warn 'Method not implemented: collection_remove '
 
   create: (packet, collection) ->
-    data = @processPacketHelper(packet, collection)
-    if data.record
-      console.warn 'Expected not to find a document already present for an add: ' + data.record
-    else
-      data.collection.push(packet.data)
+    fields = packet.data
+    collection.insert(fields)
 
   update: (packet, collection) ->
-    data = @processPacketHelper(packet, collection)
-    if !data.record
-      console.warn 'Expected to find a document to change'
-    else if !_.isEmpty(packet.data)
-      _.extend(data.record, packet.data)
+    collection.update({id: packet.id}, packet.data)
 
   update_many: (packet, collection) ->
-    collection_name = collection || packet.collection
-    local_collection = @collections[collection_name].data
-    if !local_collection
-      console.warn("[update_many]: Collection #{collection_name} doesn't exist")
-    else
-      _.each packet.data, (fields) ->
-        record = _.findIndex(local_collection, (r) -> r.id == fields.id)
-        if record>=0
-          _.extend(local_collection[record], fields)
-        else
-          local_collection.push(fields)
+    _.each packet.data, (fields) ->
+      collection.update({id: fields.id}, fields)
+
+  upsert_many: (packet, collection) ->
+    _.each packet.data, (fields) ->
+      collection.upsert({id: fields.id}, fields)
 
   destroy: (packet, collection) ->
-    data = @processPacketHelper(packet, collection)
-    if !data.record
-      console.warn 'Expected to find a document to remove'
-    else
-      data.collection.splice(data.index, 1)
+    collection.remove({id: packet.id})
 
   error: (packet, collection) ->
-    console.error packet
+    console.error "[#{packet.cmd}]: #{packet.error}"

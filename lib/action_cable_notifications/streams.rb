@@ -42,7 +42,7 @@ module ActionCableNotifications
                   to_a() rescue []
 
       response = { collection: model.model_name.collection,
-        msg: 'update_many',
+        msg: 'upsert_many',
         data: results
       }
 

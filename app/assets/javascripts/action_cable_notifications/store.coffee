@@ -14,46 +14,76 @@ class CableNotifications.Store
   # Private methods
   #######################################
 
-  packetReceived = (channelInfo, collection) ->
+  packetReceived = (channelInfo) ->
     (packet) ->
-      @storePacket(packet, collection)
-      channelInfo.callbacks.received?.apply channelInfo.channel, arguments
+      if packet?.collection
+        # Search if there is a collection in this Store that receives packets from the server
+        collection = _.find(channelInfo.collections,
+          {tableName: packet.collection})
+        if collection
+          storePacket.call(this, packet, collection)
+      channelInfo.callbacks.received?.apply(channelInfo.channel, arguments)
+
+  # Dispatch received packet to registered stores
+  # collection overrides the collection name specified in the incoming packet
+  storePacket = (packet, collection) ->
+    if packet && packet.msg
+      @callbacks[packet.msg]?(packet, collection)
 
   # Public methods
   #######################################
 
   # Register a new collection
-  registerCollection: (collection) ->
-    if @collections[collection]
-      console.warn '[registerCollection]: Collection already exists'
+  registerCollection: (name, channel, tableName) ->
+    tableName = name unless tableName
+    if @collections[name]
+      console.warn "[registerCollection]: Collection '#{name}' already exists"
     else
-      @collections[collection] = new CableNotifications.Collection(this, collection)
-    @collections[collection]
+      @collections[name] = new CableNotifications.Collection(this, name, tableName)
+      if channel
+        @syncToChannel(channel, @collections[name])
+
+    @collections[name]
 
   # Sync store using ActionCable received events
   # collection parameter overrides the collection name specified in the incoming packets for this channel
   syncToChannel: (channel, collection) ->
+    if !channel
+      console.warn "[syncToChannel]: Channel must be specified"
+      return false
+
+    if !collection
+      console.warn "[syncToChannel]: Collection must be specified"
+      return false
+
     channelId = JSON.parse(channel.identifier)?.channel
 
     if !channelId
       console.warn "[syncToChannel]: Channel specified doesn't have an identifier"
-      false
-    else
-      if @channels[channelId]
-        console.warn "[syncToChannel]: The store '#{@name}'' is already in sync with channel '#{channelId}'"
-        false
+      return false
+
+    if @collections[collection.name] < 0
+      console.warn "[syncToChannel]: Collection does not exists in the store"
+      return false
+
+    if @channels[channelId]
+      channelInfo = @channels[channelId]
+      if _.find(channelInfo.collections, {name: collection.name})
+        console.warn "[syncToChannel]: Collection '#{collection.name}' is already being synced with channel '#{channelId}'"
+        return false
       else
-        @channels[channelId] =
-          channel: channel
-          callbacks: {
-            received: channel.received
-          }
+        channelInfo.collections.push collection
+    else
+      channelInfo =
+        id: channelId
+        channel: channel
+        collections: [collection]
+        callbacks: {
+          received: channel.received
+        }
 
-        channel.received = packetReceived(@channels[channelId], collection).bind(this)
-        true
+      @channels[channelId] = channelInfo
 
-  # Dispatch received packet to registered stores
-  # collection overrides the collection name specified in the incoming packet
-  storePacket: (packet, collection) ->
-    if packet && packet.msg
-      @callbacks[packet.msg]?(packet, collection)
+      channel.received = packetReceived(channelInfo).bind(this)
+
+    return true

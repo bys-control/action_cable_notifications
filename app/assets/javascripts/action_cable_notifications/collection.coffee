@@ -1,5 +1,5 @@
 class CableNotifications.Collection
-  constructor: (@store, @name) ->
+  constructor: (@store, @name, @tableName) ->
     @data = []
     @channelInfo = null
 
@@ -7,6 +7,9 @@ class CableNotifications.Collection
   #######################################
 
   find: (selector={}) ->
+    _.filter(@data, selector)
+
+  findFirst: (selector={}) ->
     _.find(@data, selector)
 
   findIndex: (selector={}) ->
@@ -23,8 +26,8 @@ class CableNotifications.Collection
     else
       record = @data.splice(index, 1)
 
-  update: (selector={}, fields, options) ->
-    record = @find(selector)
+  update: (selector, fields, options={}) ->
+    record = @findFirst(selector)
     if !record
       if options.upsert
         @insert(fields)
@@ -36,6 +39,3 @@ class CableNotifications.Collection
   # http://docs.meteor.com/#/full/upsert
   upsert: (selector={}, fields) ->
     @update(selector, fields, {upsert: true})
-
-  filter: (selector={}) ->
-    _.filter(@data, selector)
