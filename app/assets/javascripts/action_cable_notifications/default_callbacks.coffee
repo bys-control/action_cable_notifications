@@ -3,15 +3,15 @@ class CableNotifications.Store.DefaultCallbacks
   constructor: (@collections) ->
 
   # Helper function
-  processPacketHelper = (packet, collection) ->
+  processPacketHelper: (packet, collection) ->
     index = -1
     record = null
 
     local_collection = @collections[collection || packet.collection].data
     if !local_collection
-      console.warn("[update_many]: Collection #{collection_name} doesn't exist")
+      console.warn("[#{packet.msg}]: Collection #{collection_name} doesn't exist")
     else
-      index = _.find(local_collection, (record) -> record.id == packet.id)
+      index = _.findIndex(local_collection, (record) -> record.id == packet.id)
       if (index >= 0)
         record = local_collection[index]
 
@@ -28,14 +28,14 @@ class CableNotifications.Store.DefaultCallbacks
     console.warn 'Method not implemented: collection_remove '
 
   create: (packet, collection) ->
-    data = processPacketHelper(packet, collection)
+    data = @processPacketHelper(packet, collection)
     if data.record
       console.warn 'Expected not to find a document already present for an add: ' + data.record
     else
       data.collection.push(packet.data)
 
   update: (packet, collection) ->
-    data = processPacketHelper(packet, collection)
+    data = @processPacketHelper(packet, collection)
     if !data.record
       console.warn 'Expected to find a document to change'
     else if !_.isEmpty(packet.data)
@@ -55,7 +55,7 @@ class CableNotifications.Store.DefaultCallbacks
           local_collection.push(fields)
 
   destroy: (packet, collection) ->
-    data = processPacketHelper(packet, collection)
+    data = @processPacketHelper(packet, collection)
     if !data.record
       console.warn 'Expected to find a document to remove'
     else
