@@ -37,15 +37,20 @@ class CableNotifications.Store
 
     if !channelId
       console.warn "[syncToChannel]: Channel specified doesn't have an identifier"
+      false
     else
-      @channels[channelId] =
-        channel: channel
-        callbacks: {
-          received: channel.received
-        }
+      if @channels[channelId]
+        console.warn "[syncToChannel]: The store '#{@name}'' is already in sync with channel '#{channelId}'"
+        false
+      else
+        @channels[channelId] =
+          channel: channel
+          callbacks: {
+            received: channel.received
+          }
 
-      channel.received = packetReceived(@channels[channelId], collection).bind(this)
-    channel
+        channel.received = packetReceived(@channels[channelId], collection).bind(this)
+        true
 
   # Dispatch received packet to registered stores
   # collection overrides the collection name specified in the incoming packet
