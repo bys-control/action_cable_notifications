@@ -53,7 +53,7 @@ module ActionCableNotifications
     #
     # Update one record from the DB
     #
-    def update
+    def update(data)
       # XXX: Check if the client is allowed to call the method
 
       # Remove action name from data
