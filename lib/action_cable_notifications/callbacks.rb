@@ -10,7 +10,7 @@ module ActionCableNotifications
       # Register Callbacks
       after_update :notify_update
       after_create :notify_create
-      before_destroy :notify_destroy
+      after_destroy :notify_destroy
     end
 
     module ClassMethods
