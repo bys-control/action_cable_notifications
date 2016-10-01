@@ -28,6 +28,7 @@ class CableNotifications.Store
   # collection overrides the collection name specified in the incoming packet
   dispatchPacket = (packet, collection) ->
     if packet && packet.msg
+      # Disables sync with upstream to prevent infinite message loop
       sync = collection.sync
       collection.sync = false
       @callbacks[packet.msg]?(packet, collection)
@@ -75,7 +76,12 @@ class CableNotifications.Store
         console.warn "[syncToChannel]: Collection '#{collection.name}' is already being synced with channel '#{channelId}'"
         return false
       else
+        collection.channel = channel
+        collection.sync = true
         channelInfo.collections.push collection
+
+        # Fetch data from uptream server
+        collection.fetch()
     else
       # Assigns channel to collection and turns on Sync
       collection.channel = channel
@@ -92,4 +98,6 @@ class CableNotifications.Store
 
       channel.received = packetReceived(@channels[channelId]).bind(this)
 
+      # Fetch data from upstream server
+      collection.fetch()
     return true
