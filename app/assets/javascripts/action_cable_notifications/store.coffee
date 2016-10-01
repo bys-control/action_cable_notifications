@@ -28,7 +28,10 @@ class CableNotifications.Store
   # collection overrides the collection name specified in the incoming packet
   dispatchPacket = (packet, collection) ->
     if packet && packet.msg
+      sync = collection.sync
+      collection.sync = false
       @callbacks[packet.msg]?(packet, collection)
+      collection.sync = sync
 
   # Public methods
   #######################################
@@ -74,8 +77,9 @@ class CableNotifications.Store
       else
         channelInfo.collections.push collection
     else
-      # Assigns channel to collection
+      # Assigns channel to collection and turns on Sync
       collection.channel = channel
+      collection.sync = true
 
       # Initialize channelInfo
       @channels[channelId] =
