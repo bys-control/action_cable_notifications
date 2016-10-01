@@ -10,7 +10,7 @@ class CableNotifications.Store.DefaultCallbacks
 
   create: (packet, collection) ->
     fields = packet.data
-    collection.insert(fields)
+    collection.create(fields)
 
   update: (packet, collection) ->
     collection.update({id: packet.id}, packet.data)
@@ -24,7 +24,7 @@ class CableNotifications.Store.DefaultCallbacks
       collection.upsert({id: fields.id}, fields)
 
   destroy: (packet, collection) ->
-    collection.remove({id: packet.id})
+    collection.destroy({id: packet.id})
 
   error: (packet, collection) ->
     console.error "[#{packet.cmd}]: #{packet.error}"
