@@ -10,6 +10,9 @@ class CableNotifications.Collection
   # Public methods
   #######################################
 
+  fetch: () ->
+    @channel?.perform?('fetch') if @sync
+
   where: (selector={}) ->
     _.filter(@data, selector)
 
@@ -35,9 +38,10 @@ class CableNotifications.Collection
     @update(selector, fields, {upsert: true})
 
   destroy: (selector={}) ->
-    index = @findIndex(selector)
+    index = _.findIndex(@data, selector)
     if index < 0
       console.warn("Couldn't find a matching record: #{selector}")
     else
-      record = @data.splice(index, 1)
-      @channel?.perform?('remove', {id: record.id}) if @sync
+      record = @data[index]
+      @data.splice(index, 1)
+      @channel?.perform?('destroy', {id: record.id}) if @sync
