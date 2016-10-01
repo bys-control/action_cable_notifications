@@ -19,7 +19,8 @@ module ActionCableNotifications
     # @param [Hash] selector Specifies conditions that the registers should match
     # @param [Hash] options Options
     #
-    def fetch(data={})
+    def fetch(data)
+      puts data.inspect
       # XXX: Check if the client is allowed to call the method
 
       # Remove action name from data
@@ -56,7 +57,7 @@ module ActionCableNotifications
     #
     # Update one record from the DB
     #
-    def update(data={})
+    def update(data)
       # XXX: Check if the client is allowed to call the method
 
       # Remove action name from data
@@ -67,6 +68,9 @@ module ActionCableNotifications
         id: data["id"],
         fields: data["fields"]
       }
+
+      puts data.inspect
+      puts options.inspect
 
       model = self.stream_notification_options[:model]
       broadcasting = self.stream_notification_options[:broadcasting]
@@ -102,7 +106,7 @@ module ActionCableNotifications
     #
     # Remove records from the DB
     #
-    def destroy(data={})
+    def destroy(data)
       # XXX: Check if the client is allowed to call the method
 
       # Remove action name from data
@@ -190,7 +194,7 @@ module ActionCableNotifications
       # Transmit initial state if required
       if options[:include_initial]
         # XXX: Check if data should be transmitted
-        fetch
+        fetch({})
       end
 
     end
