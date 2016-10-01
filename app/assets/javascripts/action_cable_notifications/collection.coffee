@@ -10,8 +10,8 @@ class CableNotifications.Collection
   # Public methods
   #######################################
 
-  fetch: () ->
-    @channel?.perform?('fetch') if @sync
+  fetch: (options={}) ->
+    @channel?.perform?('fetch',options) if @sync
 
   where: (selector={}) ->
     _.filter(@data, selector)
