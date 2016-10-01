@@ -21,12 +21,12 @@ class CableNotifications.Store
         collection = _.find(channelInfo.collections,
           {tableName: packet.collection})
         if collection
-          storePacket.call(this, packet, collection)
+          dispatchPacket.call(this, packet, collection)
       channelInfo.callbacks.received?.apply(channelInfo.channel, arguments)
 
   # Dispatch received packet to registered stores
   # collection overrides the collection name specified in the incoming packet
-  storePacket = (packet, collection) ->
+  dispatchPacket = (packet, collection) ->
     if packet && packet.msg
       @callbacks[packet.msg]?(packet, collection)
 
@@ -74,7 +74,11 @@ class CableNotifications.Store
       else
         channelInfo.collections.push collection
     else
-      channelInfo =
+      # Assigns channel to collection
+      collection.channel = channel
+
+      # Initialize channelInfo
+      @channels[channelId] =
         id: channelId
         channel: channel
         collections: [collection]
@@ -82,8 +86,6 @@ class CableNotifications.Store
           received: channel.received
         }
 
-      @channels[channelId] = channelInfo
-
-      channel.received = packetReceived(channelInfo).bind(this)
+      channel.received = packetReceived(@channels[channelId]).bind(this)
 
     return true

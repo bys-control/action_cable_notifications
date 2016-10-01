@@ -1,9 +1,9 @@
 class CableNotifications.Collection
   constructor: (@store, @name, @tableName) ->
     @data = []
-    @channelInfo = null
+    @channel = null
 
-  # Private methods
+  # Public methods
   #######################################
 
   find: (selector={}) ->
@@ -27,10 +27,10 @@ class CableNotifications.Collection
       record = @data.splice(index, 1)
 
   update: (selector, fields, options={}) ->
-    record = @findFirst(selector)
+    record = _.find(@data, selector)
     if !record
       if options.upsert
-        @insert(fields)
+        @data.push (fields)
       else
         console.warn("Couldn't find a matching record: #{selector}")
     else
