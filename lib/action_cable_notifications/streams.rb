@@ -118,7 +118,6 @@ module ActionCableNotifications
 
       record = model.find(options[:id]) rescue nil
 
-      result = nil
       error = nil
 
       if record.present?
@@ -131,7 +130,7 @@ module ActionCableNotifications
         error = "There is no record with id: #{options[:id]}"
       end
 
-      if !result
+      if error
         response = { collection: model.model_name.collection,
           msg: 'error',
           cmd: 'destroy',
@@ -183,7 +182,7 @@ module ActionCableNotifications
       end
 
       # Start streaming
-      stream_from options[:broadcasting] do |packet|
+      stream_from options[:broadcasting], coder: ActiveSupport::JSON do |packet|
         # XXX: Implement Meteor MergeBox functionality
         transmit packet
       end
@@ -198,6 +197,10 @@ module ActionCableNotifications
 
     def unsubscribed
       stop_all_streams
+    end
+
+    def received
+
     end
 
   end
