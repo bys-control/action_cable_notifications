@@ -122,6 +122,7 @@ module ActionCableNotifications
 
     #
     # Updates server side cache of client side collections
+    # XXX compute cache diff before sending to clients
     #
     def update_cache(packet)
       updated = false
