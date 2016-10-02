@@ -1,5 +1,5 @@
 module ActionCableNotifications
-  module Callbacks # XXX  wrap into a module 'Model'
+  module Model
     extend ActiveSupport::Concern
 
     included do

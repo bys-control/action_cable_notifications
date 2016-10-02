@@ -1,4 +1,13 @@
 class CableNotifications.Collection
+  # Private methods
+  #######################################
+  upstream = (command, params={}) ->
+    @channel?.perform?('action',
+      collection: @tableName
+      command: command
+      params: params
+    ) if @sync
+
   constructor: (@store, @name, @tableName) ->
     # Data storage array
     @data = []
@@ -7,11 +16,13 @@ class CableNotifications.Collection
     # Tells changes should be synced with upstream collection
     @sync = false
 
+    upstream = upstream.bind(this)
+
   # Public methods
   #######################################
 
-  fetch: (options={}) ->
-    @channel?.perform?('fetch',options) if @sync
+  fetch: (params) ->
+    upstream("fetch", params)
 
   where: (selector={}) ->
     _.filter(@data, selector)
@@ -23,7 +34,7 @@ class CableNotifications.Collection
     @data.push (record)
     record
 
-  update: (selector, fields, options={}) ->
+  update: (selector={}, fields={}, options={}) ->
     record = _.find(@data, selector)
     if !record
       if options.upsert
@@ -32,7 +43,7 @@ class CableNotifications.Collection
         console.warn("Couldn't find a matching record: #{selector}")
     else
       _.extend(record, fields)
-      @channel?.perform?('update', {id: record.id, fields: fields}) if @sync
+      upstream("update", {id: record.id, fields: fields})
 
   upsert: (selector={}, fields) ->
     @update(selector, fields, {upsert: true})
@@ -44,4 +55,4 @@ class CableNotifications.Collection
     else
       record = @data[index]
       @data.splice(index, 1)
-      @channel?.perform?('destroy', {id: record.id}) if @sync
+      upstream("destroy", {id: record.id})
