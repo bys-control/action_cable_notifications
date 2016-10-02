@@ -9,7 +9,7 @@ class CableNotifications.Store.DefaultCallbacks
     console.warn 'Method not implemented: collection_remove '
 
   create: (packet, collection) ->
-    collection.create(packet.data, packet.tmp_id)
+    collection.create(packet.data)
 
   update: (packet, collection) ->
     collection.update({id: packet.id}, packet.data)

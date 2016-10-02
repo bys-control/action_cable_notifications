@@ -108,6 +108,11 @@ module ActionCableNotifications
 
     end
 
+    #
+    # Transmits packets to connected client
+    #
+    # @param [Hash] packet Packet with changes notifications
+    #
     def transmit_packet(packet)
       packet = packet.as_json.deep_symbolize_keys!
       if update_cache(packet)
@@ -119,52 +124,66 @@ module ActionCableNotifications
     # Updates server side cache of client side collections
     #
     def update_cache(packet)
+      updated = false
+
+      # Check if collection already exists
+      new_collection = false
+      if @collections[packet[:collection]].nil?
+        @collections[packet[:collection]] = []
+        new_collection = true
+      end
+
+      collection = @collections[packet[:collection]]
+
       case packet[:msg]
       when 'upsert_many'
-        if @collections[packet[:collection]].nil?
-          collection = @collections[packet[:collection]] = []
+        if new_collection
           packet[:data].each do |record|
             collection.push record
           end
-          true
+          updated = true
         else
-          collection = @collections[packet[:collection]]
-          retval = false
-
           packet[:data].each do |record|
             current_record = collection.find{|c| c[:id]==record[:id]}
             if current_record
               new_record = current_record.merge(record)
               if new_record != current_record
                 current_record.merge!(record)
-                retval = true
+                updated = true
               end
             else
               collection.push record
-              retval = true
+              updated = true
             end
           end
-          retval
         end
 
       when 'create'
-        @collections[packet[:collection]].push packet[:data]
-        true
+        record = collection.find{|c| c[:id]==packet[:id]}
+        if !record
+          @collections[packet[:collection]].push packet[:data]
+          updated = true
+        end
 
       when 'update'
-        record = @collections[packet[:collection]].find{|c| c.id==packet[:id]}
+        record = @collections[packet[:collection]].find{|c| c[:id]==packet[:id]}
         if record
           record.merge!(packet[:data])
+          updated = true
         end
-        true
 
       when 'destroy'
         index = @collections[packet[:collection]].find_index{|c| c.id==packet[:id]}
         if index
           @collections[packet[:collection]].delete_at(index)
+          updated = true
         end
-        true
+
+      else
+        updated = true
       end
+
+      updated
 
     end
 

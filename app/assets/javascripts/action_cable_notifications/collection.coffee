@@ -19,8 +19,6 @@ class CableNotifications.Collection
     # Tells changes should be synced with upstream collection
     @sync = false
 
-    @create_pending_confirmation = {}
-
     upstream = upstream.bind(this)
 
   fetch: (params) ->
@@ -32,28 +30,18 @@ class CableNotifications.Collection
   find: (selector={}) ->
     _.find(@data, selector)
 
-  create: (fields={}, tmp_id) ->
-    # Check if the call is the upstream confirmation
-    if tmp_id
-      record = @create_pending_confirmation[tmp_id]
-      _.extend(record, fields)
-      delete @create_pending_confirmation[tmp_id]
-    else
-      record = _.find(@data, {id: fields.id})
-      if( record )
-        console.warn("[create] Not expected to find an existing record with id #{fields.id}")
-        return
+  create: (fields={}) ->
+    record = _.find(@data, {id: fields.id})
+    if( record )
+      console.warn("[create] Not expected to find an existing record with id #{fields.id}")
+      return
 
-      @data.push (fields) unless @sync
+    @data.push (fields) unless @sync
 
-      tmp_id = "new_#{_.random(2**32)}"
-      @create_pending_confirmation[tmp_id] = fields
-
-      upstream("create",
-        tmp_id: tmp_id
-        fields: fields
-      )
-      fields
+    upstream("create",
+      fields: fields
+    )
+    fields
 
   update: (selector={}, fields={}, options={}) ->
     record = _.find(@data, selector)
@@ -61,7 +49,7 @@ class CableNotifications.Collection
       if options.upsert
         @create(fields)
       else
-        console.warn("[update] Couldn't find a matching record: #{selector}")
+        console.warn("[update] Couldn't find a matching record:", selector)
     else
       _.extend(record, fields)
       upstream("update", {id: record.id, fields: fields})
@@ -73,8 +61,9 @@ class CableNotifications.Collection
   destroy: (selector={}) ->
     index = _.findIndex(@data, selector)
     if index < 0
-      console.warn("[destroy] Couldn't find a matching record: #{selector}")
+      console.warn("[destroy] Couldn't find a matching record:", selector)
     else
       record = @data[index]
-      @data.splice(index, 1)
+      @data.splice(index, 1) unless @sync
       upstream("destroy", {id: record.id})
+      record

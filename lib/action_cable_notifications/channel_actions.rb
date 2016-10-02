@@ -35,34 +35,22 @@ module ActionCableNotifications
         # XXX: Check if the client is allowed to call the method
 
         params = data[:params] || {}
-        tmp_id = params[:tmp_id] rescue nil
         fields = params[:fields].except(:id)
 
         error = nil
 
-        if tmp_id
+        if fields.present?
           begin
             record = data[:model].create(fields)
 
-            if record.persisted?
-              response = {
-                collection: data[:model].model_name.collection,
-                msg: 'create',
-                tmp_id: tmp_id,
-                id: record.id,
-                data: record
-              }
-
-              # Send creation notification to the client
-              transmit_packet response
-            else
+            if !record.persisted?
               error = true
             end
           rescue Exception => e
             error = e.message
           end
         else
-          error = "Tracking _id must be provided"
+          error = "No fields were provided"
         end
 
         if error
@@ -74,7 +62,7 @@ module ActionCableNotifications
           }
 
           # Send error notification to the client
-          transmit_packet response
+          transmit response
         end
 
       end
@@ -111,7 +99,7 @@ module ActionCableNotifications
           }
 
           # Send error notification to the client
-          transmit_packet response
+          transmit response
         end
 
       end
@@ -146,7 +134,7 @@ module ActionCableNotifications
           }
 
           # Send error notification to the client
-          transmit_packet response
+          transmit response
         end
 
       end
