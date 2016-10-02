@@ -60,7 +60,7 @@ module ActionCableNotifications
         if options.present?
           {
             collection: self.model_name.collection,
-            msg: 'update_many',
+            msg: 'upsert_many',
             data: self.scoped_collection(options[:scope])
           }
         end
@@ -95,21 +95,23 @@ module ActionCableNotifications
         changes[k] = v[1]
       end
 
-      self.ActionCableNotificationsOptions.each do |broadcasting, options|
-        if options[:actions].include? :update
-          # Checks if record is within scope before broadcasting
-          if self.class.scoped_collection(options[:scope]).where(id: self.id)
-            # XXX: Performance required. For small data sets this should be
-            # fast enough, but for large data sets this could be slow. As
-            # clients should have a limited subset of the dataset loaded at a
-            # time, caching the results already sent to clients in server memory
-            # should not have a big impact in memory usage but can improve
-            # performance for large data sets where only a sub
-            ActionCable.server.broadcast broadcasting,
-              collection: self.model_name.collection,
-              msg: 'update',
-              id: self.id,
-              data: changes
+      if !changes.empty?
+        self.ActionCableNotificationsOptions.each do |broadcasting, options|
+          if options[:actions].include? :update
+            # Checks if record is within scope before broadcasting
+            if self.class.scoped_collection(options[:scope]).where(id: self.id)
+              # XXX: Performance required. For small data sets this should be
+              # fast enough, but for large data sets this could be slow. As
+              # clients should have a limited subset of the dataset loaded at a
+              # time, caching the results already sent to clients in server memory
+              # should not have a big impact in memory usage but can improve
+              # performance for large data sets where only a sub
+              ActionCable.server.broadcast broadcasting,
+                collection: self.model_name.collection,
+                msg: 'update',
+                id: self.id,
+                data: changes
+            end
           end
         end
       end
