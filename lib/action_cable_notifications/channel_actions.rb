@@ -25,8 +25,60 @@ module ActionCableNotifications
         }
 
         # Send data to the client
-        transmit response
+        transmit_packet response
       end
+
+      #
+      # Creates one record in the DB
+      #
+      def create(data)
+        # XXX: Check if the client is allowed to call the method
+
+        params = data[:params] || {}
+        tmp_id = params[:tmp_id] rescue nil
+        fields = params[:fields].except(:id)
+
+        error = nil
+
+        if tmp_id
+          begin
+            record = data[:model].create(fields)
+
+            if record.persisted?
+              response = {
+                collection: data[:model].model_name.collection,
+                msg: 'create',
+                tmp_id: tmp_id,
+                id: record.id,
+                data: record
+              }
+
+              # Send creation notification to the client
+              transmit_packet response
+            else
+              error = true
+            end
+          rescue Exception => e
+            error = e.message
+          end
+        else
+          error = "Tracking _id must be provided"
+        end
+
+        if error
+          response = {
+            collection: data[:model].model_name.collection,
+            msg: 'error',
+            cmd: 'create',
+            error: error || record.errors.full_messages
+          }
+
+          # Send error notification to the client
+          transmit_packet response
+        end
+
+      end
+
 
       #
       # Update one record from the DB
@@ -38,12 +90,11 @@ module ActionCableNotifications
 
         record = data[:model].find(params[:id]) rescue nil
 
-        result = nil
         error = nil
 
         if record.present?
           begin
-            result = record.update_attributes(params[:fields])
+            record.update_attributes(params[:fields])
           rescue Exception => e
             error = e.message
           end
@@ -51,7 +102,7 @@ module ActionCableNotifications
           error = "There is no record with id: #{params[:id]}"
         end
 
-        if !result
+        if error
           response = {
             collection: data[:model].model_name.collection,
             msg: 'error',
@@ -60,7 +111,7 @@ module ActionCableNotifications
           }
 
           # Send error notification to the client
-          transmit response
+          transmit_packet response
         end
 
       end
@@ -95,7 +146,7 @@ module ActionCableNotifications
           }
 
           # Send error notification to the client
-          transmit response
+          transmit_packet response
         end
 
       end

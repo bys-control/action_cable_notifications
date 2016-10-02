@@ -5,7 +5,8 @@ module ActionCableNotifications
     extend ActiveSupport::Concern
 
     included do
-      cattr_accessor :ActionCableNotifications
+      # class variables
+      class_attribute :ActionCableNotifications
 
       self.ActionCableNotifications = {}
     end
@@ -40,11 +41,27 @@ module ActionCableNotifications
       case data[:command]
       when "fetch"
         fetch(params)
+      when "create"
+        create(params)
       when "update"
         update(params)
       when "destroy"
         destroy(params)
       end
+    end
+
+    def initialize(*args)
+      super
+      @collections = {}
+    end
+
+    def subscribed
+      puts "subscribed"
+    end
+
+    def unsubscribed
+      puts "unsubscribed"
+      stop_all_streams
     end
 
     #
@@ -86,14 +103,69 @@ module ActionCableNotifications
 
       # Start streaming
       stream_from options[:broadcasting], coder: ActiveSupport::JSON do |packet|
-        # XXX: Implement Meteor MergeBox functionality
-        transmit packet
+        transmit_packet(packet)
       end
 
     end
 
-    def unsubscribed
-      stop_all_streams
+    def transmit_packet(packet)
+      packet = packet.as_json.deep_symbolize_keys!
+      if update_cache(packet)
+        transmit packet
+      end
+    end
+
+    #
+    # Updates server side cache of client side collections
+    #
+    def update_cache(packet)
+      case packet[:msg]
+      when 'upsert_many'
+        if @collections[packet[:collection]].nil?
+          collection = @collections[packet[:collection]] = []
+          packet[:data].each do |record|
+            collection.push record
+          end
+          true
+        else
+          collection = @collections[packet[:collection]]
+          retval = false
+
+          packet[:data].each do |record|
+            current_record = collection.find{|c| c[:id]==record[:id]}
+            if current_record
+              new_record = current_record.merge(record)
+              if new_record != current_record
+                current_record.merge!(record)
+                retval = true
+              end
+            else
+              collection.push record
+              retval = true
+            end
+          end
+          retval
+        end
+
+      when 'create'
+        @collections[packet[:collection]].push packet[:data]
+        true
+
+      when 'update'
+        record = @collections[packet[:collection]].find{|c| c.id==packet[:id]}
+        if record
+          record.merge!(packet[:data])
+        end
+        true
+
+      when 'destroy'
+        index = @collections[packet[:collection]].find_index{|c| c.id==packet[:id]}
+        if index
+          @collections[packet[:collection]].delete_at(index)
+        end
+        true
+      end
+
     end
 
   end
