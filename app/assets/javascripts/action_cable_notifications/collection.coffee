@@ -2,11 +2,15 @@ class CableNotifications.Collection
   # Private methods
   #######################################
   upstream = (command, params={}) ->
-    @channel?.perform?('action',
-      collection: @tableName
-      command: command
-      params: params
-    ) if @sync
+    if !@channel.consumer.connection.disconnected
+      @channel?.perform?('action',
+        collection: @tableName
+        command: command
+        params: params
+      ) if @sync
+    else
+      # XXX Queue commands to be sent to server when connection
+      # is resumed
 
   # Public methods
   #######################################
@@ -19,6 +23,8 @@ class CableNotifications.Collection
     # Tells changes should be synced with upstream collection
     @sync = false
 
+    # Bind private methods to class instance
+    ########################################################
     upstream = upstream.bind(this)
 
   fetch: (params) ->
