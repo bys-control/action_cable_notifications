@@ -137,6 +137,20 @@ module ActionCableNotifications
       collection = @collections[packet[:collection]]
 
       case packet[:msg]
+      when 'update_many'
+        if !new_collection
+          packet[:data].each do |record|
+            current_record = collection.find{|c| c[:id]==record[:id]}
+            if current_record
+              new_record = current_record.merge(record)
+              if new_record != current_record
+                current_record.merge!(record)
+                updated = true
+              end
+            end
+          end
+        end
+
       when 'upsert_many'
         if new_collection
           packet[:data].each do |record|
