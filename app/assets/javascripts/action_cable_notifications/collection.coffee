@@ -94,7 +94,7 @@ class CableNotifications.Collection
     # Search in tracked records
     recordIndex = _.findIndex(@trackedRecords, {id: fields.id})
     if recordIndex>=0
-      fields = _.merge( @trackedRecords[recordIndex], fields )
+      fields = _.extend( @trackedRecords[recordIndex], fields )
       @trackedRecords.splice(recordIndex, 1)
 
     @data.push (fields) unless @sync
