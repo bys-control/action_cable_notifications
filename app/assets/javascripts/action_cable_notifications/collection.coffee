@@ -28,6 +28,9 @@ class CableNotifications.Collection
       # Cleanup performed commands
       _.remove(@commandsCache, {performed: true})
 
+      # Fetch data from upstream server when connection is resumed
+      @fetch()
+
   # Public methods
   #######################################
 
@@ -44,7 +47,6 @@ class CableNotifications.Collection
     # Bind private methods to class instance
     ########################################################
     upstream = upstream.bind(this)
-    connectionChanged = connectionChanged.bind(this)
 
   # Sync collection to ActionCable Channel
   syncToChannel: (@channel) ->
@@ -52,7 +54,7 @@ class CableNotifications.Collection
 
     Tracker.autorun () =>
       @channel.isConnected()
-      connectionChanged()
+      connectionChanged.call(this)
 
   # Fetch records from upstream
   fetch: (params) ->

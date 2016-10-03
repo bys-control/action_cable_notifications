@@ -96,9 +96,6 @@ class CableNotifications.Store
       else
         collection.syncToChannel(channel)
         channelInfo.collections.push collection
-
-        # Fetch data from uptream server
-        collection.fetch()
     else
       # Initialize channelInfo
       @channels[channelId] =
@@ -119,8 +116,5 @@ class CableNotifications.Store
 
       # Assigns channel to collection and turns on Sync
       collection.syncToChannel(channel)
-
-      # Fetch data from upstream server
-      collection.fetch()
 
     return true
