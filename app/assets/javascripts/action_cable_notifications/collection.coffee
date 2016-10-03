@@ -76,7 +76,7 @@ class CableNotifications.Collection
         if trackedRecord
           trackedRecord
         else
-          trackedRecord = {id: selector.id}
+          trackedRecord = selector
           @trackedRecords.push trackedRecord
           trackedRecord
       else
