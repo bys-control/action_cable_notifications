@@ -111,7 +111,7 @@ class CableNotifications.Collection
       else
         console.warn("[update] Couldn't find a matching record:", selector)
     else
-      _.extend(record, fields)
+      _.extend(record, fields) unless @sync
       upstream("update", {id: record.id, fields: fields})
       record
 
