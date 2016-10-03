@@ -56,11 +56,11 @@ module ActionCableNotifications
     end
 
     def subscribed
-      puts "subscribed"
+      # XXX Check if this is new connection or a reconection of a
+      # previously active client
     end
 
     def unsubscribed
-      puts "unsubscribed"
       stop_all_streams
     end
 

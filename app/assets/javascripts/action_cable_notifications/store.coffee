@@ -9,11 +9,11 @@ class CableNotifications.Store
     if !@callbacks
       @callbacks = new CableNotifications.Store.DefaultCallbacks(@collections)
 
-    this
-
   # Private methods
   #######################################
 
+  # Check received packet and dispatch to the apropriate callback.
+  # Then call original callback
   packetReceived = (channelInfo) ->
     (packet) ->
       if packet?.collection
@@ -33,6 +33,24 @@ class CableNotifications.Store
       collection.sync = false
       @callbacks[packet.msg]?(packet, collection)
       collection.sync = sync
+
+  # Called when connected to a channel
+  channelConnected = (channelInfo) ->
+    () ->
+      channelInfo.connectedDep.changed()
+      channelInfo.callbacks.connected?.apply(channelInfo.channel, arguments)
+
+  # Called when disconnected from a channel
+  channelDisconnected = (channelInfo) ->
+    () ->
+      channelInfo.connectedDep.changed()
+      channelInfo.callbacks.disconnected?.apply(channelInfo.channel, arguments)
+
+  # Returns channel connection status
+  channelIsConnected = (channelInfo) ->
+    () ->
+      channelInfo.connectedDep.depend()
+      !channelInfo.channel.consumer.connection.disconnected
 
   # Public methods
   #######################################
@@ -76,17 +94,12 @@ class CableNotifications.Store
         console.warn "[syncToChannel]: Collection '#{collection.name}' is already being synced with channel '#{channelId}'"
         return false
       else
-        collection.channel = channel
-        collection.sync = true
+        collection.syncToChannel(channel)
         channelInfo.collections.push collection
 
         # Fetch data from uptream server
         collection.fetch()
     else
-      # Assigns channel to collection and turns on Sync
-      collection.channel = channel
-      collection.sync = true
-
       # Initialize channelInfo
       @channels[channelId] =
         id: channelId
@@ -94,10 +107,20 @@ class CableNotifications.Store
         collections: [collection]
         callbacks: {
           received: channel.received
+          connected: channel.connected
+          disconnected: channel.disconnected
         }
+        connectedDep: new Tracker.Dependency
 
       channel.received = packetReceived(@channels[channelId]).bind(this)
+      channel.connected = channelConnected(@channels[channelId]).bind(this)
+      channel.disconnected = channelDisconnected(@channels[channelId]).bind(this)
+      channel.isConnected = channelIsConnected(@channels[channelId]).bind(this)
+
+      # Assigns channel to collection and turns on Sync
+      collection.syncToChannel(channel)
 
       # Fetch data from upstream server
       collection.fetch()
+
     return true

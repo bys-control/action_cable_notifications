@@ -2,15 +2,31 @@ class CableNotifications.Collection
   # Private methods
   #######################################
   upstream = (command, params={}) ->
-    if !@channel.consumer.connection.disconnected
-      @channel?.perform?('action',
+    if @sync
+      cmd =
         collection: @tableName
         command: command
         params: params
-      ) if @sync
+
+      # If channel is connected, send command to the server
+      if @channel.isConnected()
+        @channel?.perform?('action', cmd)
+      # Otherwise, enqueue commands to send when connection resumes
+      else
+        @commandsCache.push {command: command, params: params, performed: false}
+        false
     else
-      # XXX Queue commands to be sent to server when connection
-      # is resumed
+      false
+
+  connectionChanged = () ->
+    if @channel.isConnected()
+      _.each(@commandsCache, (cmd) ->
+        if upstream(cmd.command, cmd.params)
+          cmd.performed = true
+      )
+
+      # Cleanup performed commands
+      _.remove(@commandsCache, {performed: true})
 
   # Public methods
   #######################################
@@ -22,20 +38,35 @@ class CableNotifications.Collection
     @channel = null
     # Tells changes should be synced with upstream collection
     @sync = false
+    # Stores upstream commands when there is no connection to the server
+    @commandsCache = []
 
     # Bind private methods to class instance
     ########################################################
     upstream = upstream.bind(this)
+    connectionChanged = connectionChanged.bind(this)
 
+  # Sync collection to ActionCable Channel
+  syncToChannel: (@channel) ->
+    @sync = true
+
+    Tracker.autorun () =>
+      @channel.isConnected()
+      connectionChanged()
+
+  # Fetch records from upstream
   fetch: (params) ->
     upstream("fetch", params)
 
+  # Filter records from the current collection
   where: (selector={}) ->
     _.filter(@data, selector)
 
+  # Find a record
   find: (selector={}) ->
     _.find(@data, selector)
 
+  # Creates a new record
   create: (fields={}) ->
     record = _.find(@data, {id: fields.id})
     if( record )
@@ -49,6 +80,7 @@ class CableNotifications.Collection
     )
     fields
 
+  # Update an existing record
   update: (selector={}, fields={}, options={}) ->
     record = _.find(@data, selector)
     if !record
@@ -61,9 +93,11 @@ class CableNotifications.Collection
       upstream("update", {id: record.id, fields: fields})
       record
 
+  # Update an existing record or inserts a new one if there is no match
   upsert: (selector={}, fields) ->
     @update(selector, fields, {upsert: true})
 
+  # Destroy an existing record
   destroy: (selector={}) ->
     index = _.findIndex(@data, selector)
     if index < 0

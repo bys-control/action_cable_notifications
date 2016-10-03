@@ -11,4 +11,5 @@
 // about supported directives.
 //
 //= require lodash
+//= require ./tracker
 //= require ./cable_notifications
