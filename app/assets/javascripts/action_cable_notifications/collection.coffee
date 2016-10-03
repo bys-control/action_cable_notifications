@@ -43,6 +43,8 @@ class CableNotifications.Collection
     @sync = false
     # Stores upstream commands when there is no connection to the server
     @commandsCache = []
+    # Stores records that needs to be tracked when inserted into the collection
+    @trackedRecords = []
 
     # Bind private methods to class instance
     ########################################################
@@ -65,21 +67,39 @@ class CableNotifications.Collection
     _.filter(@data, selector)
 
   # Find a record
-  find: (selector={}) ->
-    _.find(@data, selector)
+  find: (selector={}, options={}) ->
+    record = _.find(@data, selector)
+
+    if !record and options.track
+      if selector.id
+        trackedRecord = _.find(@trackedRecords, {id: selector.id})
+        if trackedRecord
+          trackedRecord
+        else
+          trackedRecord = {id: selector.id}
+          @trackedRecords.push trackedRecord
+          trackedRecord
+      else
+        console.warn("[find] Id must be specified to track records")
+    else
+      record
 
   # Creates a new record
   create: (fields={}) ->
     record = _.find(@data, {id: fields.id})
-    if( record )
+    if record
       console.warn("[create] Not expected to find an existing record with id #{fields.id}")
       return
 
+    # Search in tracked records
+    recordIndex = _.findIndex(@trackedRecords, {id: fields.id})
+    if recordIndex>=0
+      fields = _.merge( @trackedRecords[recordIndex], fields )
+      @trackedRecords.splice(recordIndex, 1)
+
     @data.push (fields) unless @sync
 
-    upstream("create",
-      fields: fields
-    )
+    upstream("create", {fields: fields})
     fields
 
   # Update an existing record
