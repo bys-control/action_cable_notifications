@@ -29,25 +29,37 @@ module ActionCableNotifications
       data.deep_symbolize_keys!
 
       channel_options = self.ActionCableNotifications[data[:collection]]
-      model = channel_options[:model]
-      broadcasting = channel_options[:broadcasting]
-      model_options = model.ActionCableNotificationsOptions[broadcasting]
+      if channel_options
+        model = channel_options[:model]
+        broadcasting = channel_options[:broadcasting]
+        model_options = model.ActionCableNotificationsOptions[broadcasting]
 
-      params = {
-        model: model,
-        model_options: model_options,
-        params: data[:params]
-      }
+        params = {
+          model: model,
+          model_options: model_options,
+          params: data[:params]
+        }
 
-      case data[:command]
-      when "fetch"
-        fetch(params)
-      when "create"
-        create(params)
-      when "update"
-        update(params)
-      when "destroy"
-        destroy(params)
+        case data[:command]
+        when "fetch"
+          fetch(params)
+        when "create"
+          create(params)
+        when "update"
+          update(params)
+        when "destroy"
+          destroy(params)
+        end
+      else
+        response = {
+          collection: data[:collection],
+          msg: 'error',
+          command: data[:command],
+          error: "Collection '#{data[:collection]}' does not exist."
+        }
+
+        # Send error notification to the client
+        transmit response
       end
     end
 

@@ -57,7 +57,7 @@ module ActionCableNotifications
           response = {
             collection: data[:model].model_name.collection,
             msg: 'error',
-            cmd: 'create',
+            command: data[:command],
             error: error || record.errors.full_messages
           }
 
@@ -94,7 +94,7 @@ module ActionCableNotifications
           response = {
             collection: data[:model].model_name.collection,
             msg: 'error',
-            cmd: 'update',
+            command: data[:command],
             error: error || record.errors.full_messages
           }
 
@@ -129,7 +129,7 @@ module ActionCableNotifications
         if error
           response = { collection: data[:model].model_name.collection,
             msg: 'error',
-            cmd: 'destroy',
+            command: data[:command],
             error: error || record.errors.full_messages
           }
 

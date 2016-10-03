@@ -26,4 +26,4 @@ class CableNotifications.Store.DefaultCallbacks
     collection.destroy({id: packet.id})
 
   error: (packet, collection) ->
-    console.error "[#{packet.cmd}]: #{packet.error}"
+    console.error "[#{packet.command}]: #{packet.error}"
