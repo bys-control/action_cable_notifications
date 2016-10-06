@@ -62,7 +62,6 @@ class CableNotifications.Store
       console.warn "[registerCollection]: Collection '#{name}' already exists"
     else
       @collections[name] = new CableNotifications.Collection(this, name, tableName, actions)
-      @collections[name].initialize()
       if channel
         @syncToChannel(channel, @collections[name])
 
