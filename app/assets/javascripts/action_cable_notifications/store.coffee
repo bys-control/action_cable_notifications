@@ -84,18 +84,25 @@ class CableNotifications.Store
       console.warn "[syncToChannel]: Channel specified doesn't have an identifier"
       return false
 
-    if @collections[collection.name] < 0
+    if !@collections[collection.name]
       console.warn "[syncToChannel]: Collection does not exists in the store"
       return false
 
+    if collection.channel == channel
+      console.warn "[syncToChannel]: Collection is already been synced with channel '#{channelId}'"
+      return false
+
+    channel.collections = [] unless channel.collections
+
+    existingCollection = _.find(channel.collections, {tableName: collection.tableName})
+    if existingCollection
+      console.warn "[syncToChannel]: Table '#{collection.tableName}' is already being synced with channel '#{channelId}' in collection '#{existingCollection.name}'"
+
+      # Copies data from existing collection to the new collection
+      collection.data = _.cloneDeep(existingCollection.data)
+
     if @channels[channelId]
-      channelInfo = @channels[channelId]
-      if _.find(channelInfo.collections, {name: collection.name})
-        console.warn "[syncToChannel]: Collection '#{collection.name}' is already being synced with channel '#{channelId}'"
-        return false
-      else
-        collection.syncToChannel(channel)
-        channelInfo.collections.push collection
+      @channels[channelId].collections.push collection
     else
       # Initialize channelInfo
       @channels[channelId] =
@@ -114,7 +121,8 @@ class CableNotifications.Store
       channel.disconnected = channelDisconnected(@channels[channelId]).bind(this)
       channel.isConnected = channelIsConnected(@channels[channelId]).bind(this)
 
-      # Assigns channel to collection and turns on Sync
-      collection.syncToChannel(channel)
+    # Assigns channel to collection and turns on Sync
+    collection.syncToChannel(channel)
+    channel.collections.push collection
 
     return true
