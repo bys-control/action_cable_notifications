@@ -37,7 +37,8 @@ module ActionCableNotifications
         params = {
           model: model,
           model_options: model_options,
-          params: data[:params]
+          params: data[:params],
+          command: data[:command]
         }
 
         case data[:command]
