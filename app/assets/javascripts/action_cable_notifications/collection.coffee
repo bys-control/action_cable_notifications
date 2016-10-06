@@ -21,7 +21,7 @@ class CableNotifications.Collection
   connectionChanged = () ->
     if @channel.isConnected()
       _.each(@commandsCache, (cmd) ->
-        if upstream(cmd.command, cmd.params)
+        if upstream.call(this, cmd.command, cmd.params)
           cmd.performed = true
       )
 
@@ -31,9 +31,11 @@ class CableNotifications.Collection
       # Fetch data from upstream server when connection is resumed
       @fetch()
 
+    @callbacks?.connectionChanged?.call(this)
+
   # Public methods
   #######################################
-  constructor: (@store, @name, @tableName, @actions) ->
+  constructor: (@store, @name, @tableName, @callbacks) ->
     # Data storage array
     @data = []
     # Channel used to sync with upstream collection
@@ -45,13 +47,7 @@ class CableNotifications.Collection
     # Stores records that needs to be tracked when inserted into the collection
     @trackedRecords = []
 
-    # Bind private methods to class instance
-    ########################################################
-    upstream = upstream.bind(this)
-
-  initialize: () ->
-    if @actions?.initialize?
-      @actions.initialize.call(this)
+    @callbacks?.initialize?.call(this)
 
   # Sync collection to ActionCable Channel
   syncToChannel: (@channel) ->
@@ -63,90 +59,83 @@ class CableNotifications.Collection
 
   # Fetch records from upstream
   fetch: (params) ->
-    upstream("fetch", params)
+    upstream.call(this, "fetch", params)
 
   # Filter records from the current collection
   where: (selector={}) ->
-    if @actions?.where?
-      @actions.where.call(this, selector)
+    if @callbacks?.where?
+      @callbacks.where.call(this, selector)
     else
       _.filter(@data, selector)
 
   # Find a record
   find: (selector={}, options={}) ->
-    if @actions?.find?
-      @actions.find.call(this, selector, options)
-    else
-      record = _.find(@data, selector)
+    record = _.find(@data, selector)
 
-      if !record and options.track
-        if selector.id
-          trackedRecord = _.find(@trackedRecords, {id: selector.id})
-          if trackedRecord
-            trackedRecord
-          else
-            trackedRecord = selector
-            @trackedRecords.push trackedRecord
-            trackedRecord
+    if !record and options.track
+      if selector.id
+        trackedRecord = _.find(@trackedRecords, {id: selector.id})
+        if trackedRecord
+          trackedRecord
         else
-          console.warn("[find] Id must be specified to track records")
+          trackedRecord = selector
+          @trackedRecords.push trackedRecord
+          trackedRecord
       else
-        record
+        console.warn("[find] Id must be specified to track records")
+    else
+      record
 
   # Creates a new record
   create: (fields={}) ->
-    if @actions?.create?
-      @actions.create.call(this, fields)
-    else
-      record = _.find(@data, {id: fields.id})
-      if record
-        console.warn("[create] Not expected to find an existing record with id #{fields.id}")
-        return
+    record = _.find(@data, {id: fields.id})
+    if record
+      console.warn("[create] Not expected to find an existing record with id #{fields.id}")
+      return
 
-      # Search in tracked records
-      recordIndex = _.findIndex(@trackedRecords, {id: fields.id})
-      if recordIndex>=0
-        fields = _.extend( @trackedRecords[recordIndex], fields )
-        @trackedRecords.splice(recordIndex, 1)
+    # Search in tracked records
+    recordIndex = _.findIndex(@trackedRecords, {id: fields.id})
+    if recordIndex>=0
+      fields = _.extend( @trackedRecords[recordIndex], fields )
+      @trackedRecords.splice(recordIndex, 1)
 
-      @data.push (fields) unless @sync
+    if !@sync
+      @data.push (fields)
+      @callbacks?.create?.call(this, fields)
 
-      upstream("create", {fields: fields})
-      fields
+    upstream.call(this, "create", {fields: fields})
+    fields
 
   # Update an existing record
   update: (selector={}, fields={}, options={}) ->
-    if @actions?.update?
-      @actions.update.call(this, selector, fields, options)
-    else
-      record = _.find(@data, selector)
-      if !record
-        if options.upsert
-          @create(fields)
-        else
-          console.warn("[update] Couldn't find a matching record:", selector)
+    record = _.find(@data, selector)
+    if !record
+      if options.upsert
+        @create(fields)
       else
-        _.extend(record, fields) unless @sync
-        upstream("update", {id: record.id, fields: fields})
-        record
+        console.warn("[update] Couldn't find a matching record:", selector)
+    else
+      if !@sync
+        @callbacks?.update?.call(this, selector, fields, options)
+        _.extend(record, fields)
+
+      upstream.call(this, "update", {id: record.id, fields: fields})
+      record
 
   # Update an existing record or inserts a new one if there is no match
   upsert: (selector={}, fields) ->
-    if @actions?.upsert?
-      @actions.upsert.call(this, selector, fields)
-    else
-      @update(selector, fields, {upsert: true})
+    @update(selector, fields, {upsert: true})
 
   # Destroy an existing record
   destroy: (selector={}) ->
-    if @actions?.destroy?
-      @actions.destroy.call(this, selector)
+    index = _.findIndex(@data, selector)
+    if index < 0
+      console.warn("[destroy] Couldn't find a matching record:", selector)
     else
-      index = _.findIndex(@data, selector)
-      if index < 0
-        console.warn("[destroy] Couldn't find a matching record:", selector)
-      else
-        record = @data[index]
-        @data.splice(index, 1) unless @sync
-        upstream("destroy", {id: record.id})
-        record
+      record = @data[index]
+      if !@sync
+        @data.splice(index, 1)
+        @callbacks.destroy.call(this, selector)
+
+      upstream.call(this, "destroy", {id: record.id})
+      record
