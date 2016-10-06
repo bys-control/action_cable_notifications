@@ -95,15 +95,16 @@ module ActionCableNotifications
     def stream_notifications_for(model, options = {})
       # Default options
       options = {
+        broadcasting: model.model_name.collection
       }.merge(options)
 
       # These options cannot be overridden
       options[:model] = model
       options[:channel] = self
-      options[:broadcasting] = model.model_name.collection
+      model_name = model.model_name.collection
 
       # Sets channel options
-      self.ActionCableNotifications[options[:broadcasting]] = options
+      self.ActionCableNotifications[model_name] = options
 
       # Checks if model already includes notification callbacks
       if !model.respond_to? :ActionCableNotificationsOptions
