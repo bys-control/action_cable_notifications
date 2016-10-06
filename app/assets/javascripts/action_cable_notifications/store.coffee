@@ -56,12 +56,13 @@ class CableNotifications.Store
   #######################################
 
   # Register a new collection
-  registerCollection: (name, channel, tableName) ->
+  registerCollection: (name, channel, tableName, actions) ->
     tableName = name unless tableName
     if @collections[name]
       console.warn "[registerCollection]: Collection '#{name}' already exists"
     else
-      @collections[name] = new CableNotifications.Collection(this, name, tableName)
+      @collections[name] = new CableNotifications.Collection(this, name, tableName, actions)
+      @collections[name].initialize()
       if channel
         @syncToChannel(channel, @collections[name])
 
