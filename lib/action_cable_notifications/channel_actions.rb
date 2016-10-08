@@ -13,7 +13,7 @@ module ActionCableNotifications
 
         # Get results using provided parameters and model configured scope
         results = data[:model].
-                    select(params[:select]).
+                    select(params[:select] || []).
                     limit(params[:limit]).
                     where(params[:where] || {}).
                     scoped_collection(data[:model_options][:scope]).
