@@ -135,7 +135,7 @@ class CableNotifications.Collection
       record = @data[index]
       if !@sync
         @data.splice(index, 1)
-        @callbacks.destroy.call(this, selector)
+        @callbacks?.destroy?.call(this, selector)
 
       upstream.call(this, "destroy", {id: record.id})
       record
