@@ -70,7 +70,7 @@ module ActionCableNotifications
           end
 
         when 'destroy'
-          index = @collections[packet[:collection]].find_index{|c| c.id==packet[:id]}
+          index = @collections[packet[:collection]].find_index{|c| c[:id]==packet[:id]}
           if index
             @collections[packet[:collection]].delete_at(index)
             updated = true
