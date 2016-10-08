@@ -1,7 +1,7 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    action_cable_notifications (0.1.24)
+    action_cable_notifications (0.1.26)
       lodash-rails (~> 4.15.0)
       rails (~> 5.0.0, >= 5.0.0.1)
     actioncable (5.0.0.1)
@@ -156,7 +156,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  action_cable_notifications (~> 0.1.24)
+  action_cable_notifications (~> 0.1.26)
   byebug
   coffee-rails (~> 4.2)
   jbuilder (~> 2.5)

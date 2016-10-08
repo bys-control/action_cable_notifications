@@ -1,20 +1,24 @@
 // Full spec-compliant TodoMVC with localStorage persistence
 // and hash-based routing in ~120 effective lines of JavaScript.
+//= require './channels/todo'
 //= require './vue'
 
-// localStorage persistence
-var STORAGE_KEY = 'todos-vuejs-2.0'
+var store = App.cableNotifications.registerStore("defaultStore")
+var todosCollection = store.registerCollection("todos", App.todo)
+
+// DB persistence
 var todoStorage = {
   fetch: function () {
-    var todos = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
-    todos.forEach(function (todo, index) {
-      todo.id = index
-    })
-    todoStorage.uid = todos.length
-    return todos
+    return todosCollection.data
   },
-  save: function (todos) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(todos))
+  add: function (todo) {
+    todosCollection.create(todo)
+  },
+  update: function (todo) {
+    todosCollection.update({id: todo.id}, todo)
+  },
+  remove: function (todo) {
+    todosCollection.destroy({id: todo.id})
   }
 }
 
@@ -45,16 +49,6 @@ var app = new Vue({
     visibility: 'all'
   },
 
-  // watch todos change for localStorage persistence
-  watch: {
-    todos: {
-      handler: function (todos) {
-        todoStorage.save(todos)
-      },
-      deep: true
-    }
-  },
-
   // computed properties
   // http://vuejs.org/guide/computed.html
   computed: {
@@ -69,9 +63,7 @@ var app = new Vue({
         return this.remaining === 0
       },
       set: function (value) {
-        this.todos.forEach(function (todo) {
-          todo.completed = value
-        })
+        this.setCompleted(value)
       }
     }
   },
@@ -85,21 +77,27 @@ var app = new Vue({
   // methods that implement data logic.
   // note there's no DOM manipulation here at all.
   methods: {
+    toggleCompleted: function (todo) {
+      todo.completed = !todo.completed
+      todoStorage.update(todo)
+    },
+
     addTodo: function () {
       var value = this.newTodo && this.newTodo.trim()
       if (!value) {
         return
       }
-      this.todos.push({
-        id: todoStorage.uid++,
+
+      todoStorage.add({
         title: value,
         completed: false
       })
+
       this.newTodo = ''
     },
 
     removeTodo: function (todo) {
-      this.todos.splice(this.todos.indexOf(todo), 1)
+      todoStorage.remove(todo)
     },
 
     editTodo: function (todo) {
@@ -115,6 +113,8 @@ var app = new Vue({
       todo.title = todo.title.trim()
       if (!todo.title) {
         this.removeTodo(todo)
+      } else {
+        todoStorage.update(todo)
       }
     },
 
@@ -124,7 +124,24 @@ var app = new Vue({
     },
 
     removeCompleted: function () {
-      this.todos = filters.active(this.todos)
+      var todo = filters.completed(this.todos)[0]
+      if( todo ) {
+        todosCollection.destroy({id: todo.id})
+        // This is a workaround for sqlite3 databases because it doesn't
+        // allow concurrent transactions
+        setTimeout(this.removeCompleted.bind(this), 50)
+      }
+    },
+
+    setCompleted: function (value) {
+      var todo = value ? filters.active(this.todos)[0] : filters.completed(this.todos)[0]
+      if( todo ) {
+        todo.completed = value
+        todosCollection.update({id: todo.id}, {completed: value})
+        // This is a workaround for sqlite3 databases because it doesn't
+        // allow concurrent transactions
+        setTimeout(this.setCompleted.bind(this, value), 50)
+      }
     }
   },
 
