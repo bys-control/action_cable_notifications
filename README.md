@@ -35,24 +35,20 @@ stream_notifications_for(model, options = {}, &block)
 {
   actions: [:create, :update, :destroy],     # Controller actions to attach to
   broadcasting: model.model_name.collection, # Name of the pubsub stream
-  callback: nil,                             # Same as http://edgeapi.rubyonrails.org/classes/ActionCable/Channel/Streams.html
-  coder: nil,                                # Pass `coder: ActiveSupport::JSON` to decode messages as JSON before passing to the callback.
-                                             # Defaults to `coder: nil` which does no decoding, passes raw messages.
-  include_initial: false,                    # Send all records to the subscriber upon connection
   params: params,                            # Params sent during subscription
   scope: :all                                # Default collection scope
 }
-```
-* block: **(Proc)** - Same as options[:callback]
 
 ### Client side
-On **client-side**, use action_cable subscriptions as stated in the documentation. Received data will have the following format:
+On **client-side**
+
+Received data will have the following format:
 
 #### Initial values for collection
 ```javascript
 {
   collection: 'users',
-  msg: 'add_collection',
+  msg: 'upsert_many',
   data: [
     {
       id: 1,
