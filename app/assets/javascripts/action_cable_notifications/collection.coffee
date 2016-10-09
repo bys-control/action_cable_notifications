@@ -68,6 +68,9 @@ class CableNotifications.Collection
     else
       _.filter(@data, selector)
 
+  filter: (selector={}) ->
+    @where(selector)
+
   # Find a record
   find: (selector={}, options={}) ->
     record = _.find(@data, selector)
