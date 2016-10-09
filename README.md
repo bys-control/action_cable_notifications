@@ -1,7 +1,12 @@
 # ActionCableNotifications
 [![Gem Version](https://badge.fury.io/rb/action_cable_notifications.svg)](https://badge.fury.io/rb/action_cable_notifications)
 
+## Description
 **This gem is being developed as part of an internal proyect. It's constantly changing and is not ready for production usage. Use at your own risk!!**
+
+This gem provides realtime sync of Model data between a Rails 5 app and its web clients. It was inspired in [meteor's](https://www.meteor.com/) [ddp](https://github.com/meteor/meteor/tree/devel/packages/ddp) and [minimongo](https://github.com/meteor/meteor/tree/devel/packages/minimongo) for data syncing and client side storage. It uses new Rails 5 Action Cable to communicate with the server and sync collections in realtime.
+
+Check the sample [todo app](/examples/todo-vuejs) that uses this gem with [VueJS](http://vuejs.org/) for rendering. Will try to upload more examples shortly.
 
 ## Usage
 
