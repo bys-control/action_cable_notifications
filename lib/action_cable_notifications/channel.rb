@@ -96,7 +96,8 @@ module ActionCableNotifications
     def stream_notifications_for(model, options = {})
       # Default options
       options = {
-        broadcasting: model.model_name.collection
+        broadcasting: model.model_name.collection,
+        params: nil
       }.merge(options)
 
       # These options cannot be overridden
