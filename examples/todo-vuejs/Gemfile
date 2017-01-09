@@ -45,4 +45,4 @@ end
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 
-gem 'action_cable_notifications', '~> 0.1.26' #, path: '../../'
+gem 'action_cable_notifications', '~> 0.1.27' #, path: '../../'

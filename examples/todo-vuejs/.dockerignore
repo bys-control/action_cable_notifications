@@ -1,0 +1,15 @@
+.git
+.bundle
+.dockerignore
+.bowerrc
+.editorconfig
+.gitignore
+.ruby-gemset
+Dockerfile*
+docker-compose*
+makefile
+tmp
+**/*.log
+vendor/bundle
+vendor/cache
+public/assets

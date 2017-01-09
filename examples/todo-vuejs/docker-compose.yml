@@ -1,0 +1,7 @@
+web:
+  image: todo-vuejs:latest
+  ports:
+    - "80"
+  environment:
+    - PASSENGER_APP_ENV=production
+    - RAILS_ENV=production
