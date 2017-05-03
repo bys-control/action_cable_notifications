@@ -97,7 +97,8 @@ module ActionCableNotifications
       # Default options
       options = {
         broadcasting: model.model_name.collection,
-        params: nil
+        params: nil,
+        enable_cache: false
       }.merge(options)
 
       # These options cannot be overridden
@@ -120,7 +121,7 @@ module ActionCableNotifications
 
       # Start streaming
       stream_from options[:broadcasting], coder: ActiveSupport::JSON do |packet|
-        transmit_packet(packet)
+        transmit_packet(packet, options)
       end
 
     end
@@ -130,9 +131,14 @@ module ActionCableNotifications
     #
     # @param [Hash] packet Packet with changes notifications
     #
-    def transmit_packet(packet)
+    def transmit_packet(packet, options={})
       packet = packet.as_json.deep_symbolize_keys!
-      if update_cache(packet)
+
+      if options[:enable_cache]
+        if update_cache(packet)
+          transmit packet
+        end
+      else
         transmit packet
       end
     end
