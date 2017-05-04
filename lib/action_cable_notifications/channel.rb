@@ -7,9 +7,9 @@ module ActionCableNotifications
 
     included do
       # class variables
-      class_attribute :ActionCableNotifications
+      # class_attribute :ActionCableNotifications
 
-      self.ActionCableNotifications = {}
+      # @ActionCableNotifications = {}
     end
 
     #
@@ -28,7 +28,7 @@ module ActionCableNotifications
     def action(data)
       data.deep_symbolize_keys!
 
-      channel_options = self.ActionCableNotifications[data[:collection]]
+      channel_options = @ActionCableNotifications[data[:collection]]
       if channel_options
         model = channel_options[:model]
         broadcasting = channel_options[:broadcasting]
@@ -65,8 +65,9 @@ module ActionCableNotifications
     end
 
     def initialize(*args)
-      super
       @collections = {}
+      @ActionCableNotifications = {}
+      super
     end
 
     def subscribed
@@ -97,17 +98,17 @@ module ActionCableNotifications
       # Default options
       options = {
         broadcasting: model.model_name.collection,
-        params: nil,
+        params: params,
         enable_cache: false
       }.merge(options)
 
       # These options cannot be overridden
       options[:model] = model
-      options[:channel] = self
+      # options[:channel] = self
       model_name = model.model_name.collection
 
       # Sets channel options
-      self.ActionCableNotifications[model_name] = options
+      @ActionCableNotifications[model_name] = options
 
       # Checks if model already includes notification callbacks
       if !model.respond_to? :ActionCableNotificationsOptions
