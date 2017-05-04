@@ -26,6 +26,7 @@ module ActionCableNotifications
         # Default options
         options = {
           actions: [:create, :update, :destroy],
+          track_scope_changes: false,
           scope: :all,             # Default collection scope
           records: []
           }.merge(options)
@@ -110,23 +111,28 @@ module ActionCableNotifications
       if !changes.empty?
         self.ActionCableNotificationsOptions.each do |broadcasting, options|
           if options[:actions].include? :update
+            # Checks if previous record was within scope
             was_in_scope = options[:records].include? self.id
             options[:records].delete(self.id) if was_in_scope
 
-            # Checks if record is within scope before broadcasting
-            if options[:scope]==:all or self.class.scoped_collection(options[:scope]).where(id: self.id).present?
+            # Checks if current record is within scope
+            if options[:track_scope_changes]==true
+              is_in_scope = options[:scope]==:all or self.class.scoped_collection(options[:scope]).where(id: self.id).present?
+            else
+              is_in_scope = was_in_scope
+            end
+
+            if is_in_scope
               ActionCable.server.broadcast broadcasting,
                 collection: self.model_name.collection,
-                msg: was_in_scope ? 'update' : 'upsert',
+                msg: 'upsert',
                 id: self.id,
                 data: changes
-            else # checks if needs to delete the record if its no longer in scope
-              if was_in_scope
-                ActionCable.server.broadcast broadcasting,
-                  collection: self.model_name.collection,
-                  msg: 'destroy',
-                  id: self.id
-              end
+            elsif was_in_scope # checks if needs to delete the record if its no longer in scope
+              ActionCable.server.broadcast broadcasting,
+                collection: self.model_name.collection,
+                msg: 'destroy',
+                id: self.id
             end
           end
         end
