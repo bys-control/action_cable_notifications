@@ -12,17 +12,27 @@ module ActionCableNotifications
         params = data[:params] || {}
 
         # Get results using provided parameters and model configured scope
-        results = data[:model].
+        begin
+          results = data[:model].
                     select(params[:select] || []).
                     limit(params[:limit]).
                     where(params[:where] || {}).
                     scoped_collection(data[:model_options][:scope]).
                     to_a() rescue []
 
-        response = { collection: data[:model].model_name.collection,
-          msg: 'upsert_many',
-          data: results
-        }
+          response = {
+            collection: data[:model].model_name.collection,
+            msg: 'upsert_many',
+            data: results
+          }
+        rescue Exception => e
+          response = {
+            collection: data[:model].model_name.collection,
+            msg: 'error',
+            command: data[:command],
+            error: e.message
+          }
+        end
 
         # Send data to the client
         transmit_packet response
