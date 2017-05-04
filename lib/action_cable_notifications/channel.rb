@@ -6,10 +6,7 @@ module ActionCableNotifications
     extend ActiveSupport::Concern
 
     included do
-      # class variables
-      # class_attribute :ActionCableNotifications
 
-      # @ActionCableNotifications = {}
     end
 
     #
@@ -28,7 +25,7 @@ module ActionCableNotifications
     def action(data)
       data.deep_symbolize_keys!
 
-      channel_options = @ActionCableNotifications[data[:collection]]
+      channel_options = @ActionCableNotificationsOptions[data[:collection]]
       if channel_options
         model = channel_options[:model]
         broadcasting = channel_options[:broadcasting]
@@ -66,7 +63,7 @@ module ActionCableNotifications
 
     def initialize(*args)
       @collections = {}
-      @ActionCableNotifications = {}
+      @ActionCableNotificationsOptions = {}
       super
     end
 
@@ -99,7 +96,9 @@ module ActionCableNotifications
       options = {
         broadcasting: model.model_name.collection,
         params: params,
-        enable_cache: false
+        enable_cache: false,
+        model_options: {},
+        channel_options: {}
       }.merge(options)
 
       # These options cannot be overridden
@@ -108,7 +107,7 @@ module ActionCableNotifications
       model_name = model.model_name.collection
 
       # Sets channel options
-      @ActionCableNotifications[model_name] = options
+      @ActionCableNotificationsOptions[model_name] = options
 
       # Checks if model already includes notification callbacks
       if !model.respond_to? :ActionCableNotificationsOptions
@@ -117,7 +116,7 @@ module ActionCableNotifications
 
       # Sets broadcast options if they are not already present in the model
       if not model.ActionCableNotificationsOptions.key? options[:broadcasting]
-        model.broadcast_notifications_from options[:broadcasting], options
+        model.broadcast_notifications_from options[:broadcasting], options[:model_options]
       end
 
       # Start streaming
