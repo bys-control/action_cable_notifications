@@ -28,6 +28,9 @@ class CableNotifications.Collection
       # Cleanup performed commands
       _.remove(@commandsCache, {performed: true})
 
+      # Clears the data array before fetching data
+      @data.length = 0
+
       # Fetch data from upstream server when connection is resumed
       @fetch()
 
