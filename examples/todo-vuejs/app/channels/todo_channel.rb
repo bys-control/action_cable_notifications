@@ -3,12 +3,7 @@ class TodoChannel < ApplicationCable::Channel
   include ActionCableNotifications::Channel
 
   def subscribed
-    stream_notifications_for Todo,
-      model_options: {
-        scope: {
-          select: [:id, :title, :completed]
-        }
-      }
+    stream_notifications_for Todo
   end
 
   def unsubscribed
