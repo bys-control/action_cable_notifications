@@ -72,7 +72,7 @@ module ActionCableNotifications
           }
 
           # Send error notification to the client
-          transmit response
+          transmit_packet response
         end
 
       end
@@ -109,7 +109,7 @@ module ActionCableNotifications
           }
 
           # Send error notification to the client
-          transmit response
+          transmit_packet response
         end
 
       end
@@ -144,7 +144,7 @@ module ActionCableNotifications
           }
 
           # Send error notification to the client
-          transmit response
+          transmit_packet response
         end
 
       end
