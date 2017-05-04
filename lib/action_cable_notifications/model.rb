@@ -26,7 +26,7 @@ module ActionCableNotifications
         # Default options
         options = {
           actions: [:create, :update, :destroy],
-          track_scope_changes: false,
+          track_scope_changes: true,
           scope: :all,             # Default collection scope
           records: []
           }.merge(options)
@@ -91,43 +91,66 @@ module ActionCableNotifications
     def prepare_update
       self.ActionCableNotificationsOptions.each do |broadcasting, options|
         if options[:actions].include? :update
-          if options[:scope]==:all or self.class.scoped_collection(options[:scope]).where(id: self.id).present?
-            options[:records].push self.id
+          if options[:scope]==:all
+            options[:records].push self
+          else
+            record = self.class.scoped_collection(options[:scope]).where(id: self.id)
+            if record.present?
+              options[:records].push record.first
+            end
           end
         end
       end
     end
 
     #
-    # Broadcast notifications when a record is updated. Only changed
-    # field will be sent.
+    # Broadcast notifications when a record is updated. Only changed fields will be sent
+    # if they are within configured scope
     #
     def notify_update
-      changes = {}
-      self.changes.each do |k,v|
-        changes[k] = v[1]
-      end
-
-      if !changes.empty?
+      # Checks if there are changes in the model
+      if !self.changes.empty?
         self.ActionCableNotificationsOptions.each do |broadcasting, options|
           if options[:actions].include? :update
             # Checks if previous record was within scope
-            was_in_scope = options[:records].include? self.id
-            options[:records].delete(self.id) if was_in_scope
+            record = options[:records].detect{|r| r.id==self.id}
+            was_in_scope = record.present?
+            options[:records].delete(record) if was_in_scope
 
             # Checks if current record is within scope
             if options[:track_scope_changes]==true
-              is_in_scope = options[:scope]==:all or self.class.scoped_collection(options[:scope]).where(id: self.id).present?
+              is_in_scope = false
+              if options[:scope]==:all
+                record = self
+                is_in_scope = true
+              else
+                record = self.class.scoped_collection(options[:scope]).where(id: self.id)
+                if record.present?
+                  record = record.first
+                  is_in_scope = true
+                end
+              end
             else
               is_in_scope = was_in_scope
             end
 
+            # Broadcasts notifications about model changes
             if is_in_scope
-              ActionCable.server.broadcast broadcasting,
-                collection: self.model_name.collection,
-                msg: 'upsert',
-                id: self.id,
-                data: changes
+              # Get model changes and applies them to the scoped collection record
+              changes = {}
+              self.changes.each do |k,v|
+                if record.respond_to?(k)
+                  changes[k] = v[1]
+                end
+              end
+
+              if !changes.empty?
+                ActionCable.server.broadcast broadcasting,
+                  collection: self.model_name.collection,
+                  msg: 'upsert',
+                  id: self.id,
+                  data: changes
+              end
             elsif was_in_scope # checks if needs to delete the record if its no longer in scope
               ActionCable.server.broadcast broadcasting,
                 collection: self.model_name.collection,
