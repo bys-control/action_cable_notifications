@@ -12,10 +12,10 @@ module ActionCableNotifications
       after_update :notify_update
       after_create :notify_create
       after_destroy :notify_destroy
+
     end
 
-    module ClassMethods
-
+    class_methods do
       #
       # Sets or removes notificacions options for Active Record model
       #
