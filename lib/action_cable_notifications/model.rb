@@ -8,6 +8,7 @@ module ActionCableNotifications
       self.ActionCableNotificationsOptions = {}
 
       # Register Callbacks
+      before_update :prepare_update
       after_update :notify_update
       after_create :notify_create
       after_destroy :notify_destroy
@@ -25,7 +26,8 @@ module ActionCableNotifications
         # Default options
         options = {
           actions: [:create, :update, :destroy],
-          scope: :all             # Default collection scope
+          scope: :all,             # Default collection scope
+          records: []
           }.merge(options)
 
         self.ActionCableNotificationsOptions[broadcasting.to_s] = options
@@ -74,12 +76,22 @@ module ActionCableNotifications
       self.ActionCableNotificationsOptions.each do |broadcasting, options|
         if options[:actions].include? :create
           # Checks if record is within scope before broadcasting
-          if self.class.scoped_collection(options[:scope]).where(id: self.id)
+          if options[:scope]==:all or self.class.scoped_collection(options[:scope]).where(id: self.id).present?
             ActionCable.server.broadcast broadcasting,
               collection: self.model_name.collection,
               msg: 'create',
               id: self.id,
               data: self
+          end
+        end
+      end
+    end
+
+    def prepare_update
+      self.ActionCableNotificationsOptions.each do |broadcasting, options|
+        if options[:actions].include? :update
+          if options[:scope]==:all or self.class.scoped_collection(options[:scope]).where(id: self.id).present?
+            options[:records].push self.id
           end
         end
       end
@@ -98,19 +110,23 @@ module ActionCableNotifications
       if !changes.empty?
         self.ActionCableNotificationsOptions.each do |broadcasting, options|
           if options[:actions].include? :update
+            was_in_scope = options[:records].include? self.id
+            options[:records].delete(self.id) if was_in_scope
+
             # Checks if record is within scope before broadcasting
-            if self.class.scoped_collection(options[:scope]).where(id: self.id)
-              # XXX: Performance required. For small data sets this should be
-              # fast enough, but for large data sets this could be slow. As
-              # clients should have a limited subset of the dataset loaded at a
-              # time, caching the results already sent to clients in server memory
-              # should not have a big impact in memory usage but can improve
-              # performance for large data sets where only a sub
+            if options[:scope]==:all or self.class.scoped_collection(options[:scope]).where(id: self.id).present?
               ActionCable.server.broadcast broadcasting,
                 collection: self.model_name.collection,
-                msg: 'update',
+                msg: was_in_scope ? 'update' : 'upsert',
                 id: self.id,
                 data: changes
+            else # checks if needs to delete the record if its no longer in scope
+              if was_in_scope
+                ActionCable.server.broadcast broadcasting,
+                  collection: self.model_name.collection,
+                  msg: 'destroy',
+                  id: self.id
+              end
             end
           end
         end
@@ -122,9 +138,9 @@ module ActionCableNotifications
     #
     def notify_destroy
       self.ActionCableNotificationsOptions.each do |broadcasting, options|
-        if options[:actions].include? :destroy
+        if options[:scope]==:all or options[:actions].include? :destroy
           # Checks if record is within scope before broadcasting
-          if self.class.scoped_collection(options[:scope]).where(id: self.id)
+          if options[:scope]==:all or self.class.scoped_collection(options[:scope]).where(id: self.id).present?
             ActionCable.server.broadcast broadcasting,
               collection: self.model_name.collection,
               msg: 'destroy',
