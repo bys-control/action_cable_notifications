@@ -18,6 +18,9 @@ class CableNotifications.Store.DefaultCallbacks
     _.each packet.data, (fields) ->
       collection.update({id: fields.id}, fields)
 
+  upsert: (packet, collection) ->
+    collection.upsert({id: packet.id}, packet.data)
+
   upsert_many: (packet, collection) ->
     _.each packet.data, (fields) ->
       collection.upsert({id: fields.id}, fields)
