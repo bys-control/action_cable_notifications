@@ -6,10 +6,7 @@ class TodoChannel < ApplicationCable::Channel
     stream_notifications_for Todo,
       model_options: {
         scope: {
-          select: [:id, :title, :completed],
-          where: {
-            completed: false
-          }
+          select: [:id, :title, :completed]
         }
       }
   end
