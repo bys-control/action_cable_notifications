@@ -96,7 +96,7 @@ module ActionCableNotifications
       options = {
         broadcasting: model.model_name.collection,
         params: params,
-        enable_cache: false,
+        cache: false,
         model_options: {},
         channel_options: {}
       }.merge(options)
@@ -132,9 +132,14 @@ module ActionCableNotifications
     # @param [Hash] packet Packet with changes notifications
     #
     def transmit_packet(packet, options={})
+      # Default options
+      options = {
+        cache: false
+      }.merge(options)
+
       packet = packet.as_json.deep_symbolize_keys!
 
-      if options[:enable_cache]
+      if options[:cache]==true
         if update_cache(packet)
           transmit packet
         end
