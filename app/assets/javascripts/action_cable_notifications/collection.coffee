@@ -29,7 +29,7 @@ class CableNotifications.Collection
       _.remove(@commandsCache, {performed: true})
 
       # Clears the data array before fetching data
-      @data.length = 0
+      @data.splice(0,@data.length)
 
       # Fetch data from upstream server when connection is resumed
       @fetch()
