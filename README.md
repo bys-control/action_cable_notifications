@@ -19,9 +19,17 @@ class TestChannel < ApplicationCable::Channel
   include ActionCableNotifications::Channel
 
   def subscribed
+    # Config streaming for Customer model with default options
     stream_notifications_for Customer
     # Can have more than one ActiveRecord model streaming per channel
-    stream_notifications_for Invoice, scope: { limit: 5, order: :id, select: [:id, :customer_id, :seller_id, :amount] }
+    stream_notifications_for Invoice,
+      model_options: {
+        scope: { 
+          limit: 5, 
+          order: :id, 
+          select: [:id, :customer_id, :seller_id, :amount]
+      }
+    }
   end
 
   def unsubscribed
@@ -40,10 +48,14 @@ stream_notifications_for(model, options = {}, &block)
 * options: **(Hash)** - Options to be used for configuracion. Default options are:
 ```ruby
 {
-  actions: [:create, :update, :destroy],     # Controller actions to attach to
   broadcasting: model.model_name.collection, # Name of the pubsub stream
-  params: params,                            # Params sent during subscription
-  scope: :all                                # Default collection scope. Can be an Array or Hash
+  params: params,                            # Params sent when client subscribes
+  cache: false,                              # Turn off server-side cache of client-side data
+  model_options: {
+    actions: [:create, :update, :destroy],     # Model callbacks to attach to
+    scope: :all                                # Default collection scope. Can be an ,Array or Hash
+    track_scope_changes: true                 # During model updates, checks if the changes affect scope inclusion of the resulting record
+  }
 }
 ```
 
