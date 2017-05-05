@@ -136,20 +136,28 @@ module ActionCableNotifications
 
             # Broadcasts notifications about model changes
             if is_in_scope
-              # Get model changes and applies them to the scoped collection record
-              changes = {}
-              self.changes.each do |k,v|
-                if record.respond_to?(k)
-                  changes[k] = v[1]
+              if was_in_scope
+                # Get model changes and applies them to the scoped collection record
+                changes = {}
+                self.changes.each do |k,v|
+                  if record.respond_to?(k)
+                    changes[k] = v[1]
+                  end
                 end
-              end
 
-              if !changes.empty?
+                if !changes.empty?
+                  ActionCable.server.broadcast broadcasting,
+                    collection: self.model_name.collection,
+                    msg: 'update',
+                    id: self.id,
+                    data: changes
+                end
+              else
                 ActionCable.server.broadcast broadcasting,
                   collection: self.model_name.collection,
-                  msg: 'upsert',
-                  id: self.id,
-                  data: changes
+                  msg: 'create',
+                  id: record.id,
+                  data: record
               end
             elsif was_in_scope # checks if needs to delete the record if its no longer in scope
               ActionCable.server.broadcast broadcasting,
