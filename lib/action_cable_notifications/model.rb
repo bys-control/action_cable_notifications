@@ -108,8 +108,15 @@ module ActionCableNotifications
     # if they are within configured scope
     #
     def notify_update
+      # Get model changes
+      if self.respond_to?(:saved_changes) # For Rails >= 5.1
+        changes = self.saved_changes.transform_values(&:second)
+      else # For Rails < 5.1
+        changes = self.changes.transform_values(&:second)
+      end
+
       # Checks if there are changes in the model
-      if !self.changes.empty?
+      if !changes.empty?
         self.ActionCableNotificationsOptions.each do |broadcasting, options|
           if options[:actions].include? :update
             # Checks if previous record was within scope
@@ -138,12 +145,7 @@ module ActionCableNotifications
             if is_in_scope
               if was_in_scope
                 # Get model changes and applies them to the scoped collection record
-                changes = {}
-                self.changes.each do |k,v|
-                  if record.respond_to?(k)
-                    changes[k] = v[1]
-                  end
-                end
+                changes.select!{|k,v| record.respond_to?(k)}
 
                 if !changes.empty?
                   ActionCable.server.broadcast broadcasting,
