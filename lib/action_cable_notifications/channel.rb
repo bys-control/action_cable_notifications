@@ -34,6 +34,7 @@ module ActionCableNotifications
         params = {
           model: model,
           model_options: model_options,
+          options: channel_options,
           params: data[:params],
           command: data[:command]
         }
@@ -92,14 +93,14 @@ module ActionCableNotifications
     # @param [Hash] options Streaming options
     #
     def stream_notifications_for(model, options = {})
+
       # Default options
       options = {
         broadcasting: model.model_name.collection,
-        params: params,
         cache: false,
         model_options: {},
-        channel_options: {}
-      }.merge(options)
+        scope: :all
+      }.merge(options).merge(params)
 
       # These options cannot be overridden
       options[:model] = model
@@ -117,6 +118,8 @@ module ActionCableNotifications
       # Sets broadcast options if they are not already present in the model
       if not model.ActionCableNotificationsOptions.key? options[:broadcasting]
         model.broadcast_notifications_from options[:broadcasting], options[:model_options]
+      else # Reads options configuracion from model
+        options[:model_options] = model.ActionCableNotificationsOptions[options[:broadcasting]]
       end
 
       # Start streaming
@@ -124,6 +127,7 @@ module ActionCableNotifications
         transmit_packet(packet, options)
       end
 
+      # XXX: Transmit initial data
     end
 
     #
@@ -139,12 +143,14 @@ module ActionCableNotifications
 
       packet = packet.as_json.deep_symbolize_keys!
 
-      if options[:cache]==true
-        if update_cache(packet)
+      if validate_packet(packet, options)
+        if options[:cache]==true
+          if update_cache(packet)
+            transmit packet
+          end
+        else
           transmit packet
         end
-      else
-        transmit packet
       end
     end
 

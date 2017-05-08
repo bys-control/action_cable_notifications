@@ -35,7 +35,7 @@ module ActionCableNotifications
         end
 
         # Send data to the client
-        transmit_packet response
+        transmit_packet response, data[:options]
       end
 
       #

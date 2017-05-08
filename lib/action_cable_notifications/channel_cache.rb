@@ -1,6 +1,52 @@
+require 'action_cable_notifications/active_hash/active_hash.rb'
+
 module ActionCableNotifications
   module Channel
     module Cache
+
+      class ChannelCache < ActiveHash::Base
+      end
+
+      class ChannelCacheValidation < ActiveHash::Base
+      end
+
+      #
+      # Validates packet before transmitting the message
+      #
+      # @param [Hash] packet Packet to be transmitted
+      # @param [Hash] options Channels options used to validate the packet
+      #
+      # @return [Boolean] <description>
+      #
+      def validate_packet(packet, options = {})
+        options = {
+        }.merge(options)
+
+        if packet[:msg].in? ['upsert_many', 'create', 'update', 'destroy']
+          if packet[:msg].in? ['upsert_many']
+            data = packet[:data]
+          else
+            data = Array(packet[:data].merge({id: packet[:id]}))
+          end
+
+          ChannelCacheValidation.data = data
+          data = ChannelCacheValidation.scoped_collection(options[:scope])
+          if data.present?
+            data = data.map{|e| e.attributes} rescue []
+            if packet[:msg].in? ['upsert_many']
+              packet[:data] = data
+            else
+              packet[:data] = data.first
+            end
+            true
+          else
+            false
+          end
+        else
+          true
+        end
+
+      end
 
       #
       # Updates server side cache of client side collections
