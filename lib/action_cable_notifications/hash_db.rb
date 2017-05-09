@@ -66,7 +66,7 @@ module HashDB
 
     def select( fields=nil )
       if fields.present?
-        wrap(all.map{|v| v.attributes.slice(*Array(fields))})
+        wrap(@data.map{|v| v.slice(*(Array(fields).map(&:to_sym)))})
       else
         all
       end
