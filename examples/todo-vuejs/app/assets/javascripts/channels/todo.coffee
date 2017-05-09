@@ -1,4 +1,6 @@
-App.todo = App.cable.subscriptions.create "TodoChannel",
+App.todo = App.cable.subscriptions.create {
+  channel: "TodoChannel"
+  },
   connected: ->
     # Called when the subscription is ready for use on the server
 
