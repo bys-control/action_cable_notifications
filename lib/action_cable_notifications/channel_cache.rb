@@ -1,13 +1,12 @@
-require 'action_cable_notifications/active_hash/active_hash.rb'
+require 'action_cable_notifications/hash_db.rb'
 
 module ActionCableNotifications
   module Channel
     module Cache
 
-      class ChannelCache < ActiveHash::Base
-      end
-
-      class ChannelCacheValidation < ActiveHash::Base
+      def initialize(*args)
+        super
+        @cache = HashDB::Base.new()
       end
 
       #
@@ -26,13 +25,12 @@ module ActionCableNotifications
           if packet[:msg].in? ['upsert_many']
             data = packet[:data]
           else
-            data = Array(packet[:data].merge({id: packet[:id]}))
+            data = [packet[:data].merge({id: packet[:id]})]
           end
 
-          ChannelCacheValidation.data = data
-          data = ChannelCacheValidation.scoped_collection(options[:scope])
+          packet_validator = HashDB::Base.new(data)
+          data = packet_validator.scoped_collection(options[:scope]).data
           if data.present?
-            data = data.map{|e| e.attributes} rescue []
             if packet[:msg].in? ['upsert_many']
               packet[:data] = data
             else
