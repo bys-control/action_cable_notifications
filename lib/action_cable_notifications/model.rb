@@ -26,7 +26,7 @@ module ActionCableNotifications
         # Default options
         options = {
           actions: [:create, :update, :destroy],
-          track_scope_changes: true,
+          track_scope_changes: false,
           scope: :all,             # Default collection scope
           records: []
           }.merge(options)
