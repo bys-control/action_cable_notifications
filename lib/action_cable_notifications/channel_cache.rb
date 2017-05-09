@@ -34,7 +34,7 @@ module ActionCableNotifications
             if packet[:msg].in? ['upsert_many']
               packet[:data] = data
             else
-              packet[:data] = data.first
+              packet[:data] = data.first.except(:id)
             end
             true
           else
