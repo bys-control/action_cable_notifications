@@ -100,7 +100,7 @@ module ActionCableNotifications
         cache: false,
         model_options: {},
         scope: :all
-      }.merge(options).merge(params)
+      }.merge(options).merge(params.deep_symbolize_keys)
 
       # These options cannot be overridden
       options[:model] = model
@@ -141,7 +141,7 @@ module ActionCableNotifications
         cache: false
       }.merge(options)
 
-      packet = packet.as_json.deep_symbolize_keys!
+      packet = packet.as_json.deep_symbolize_keys
 
       if validate_packet(packet, options)
         if options[:cache]==true
