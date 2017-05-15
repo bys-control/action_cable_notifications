@@ -25,7 +25,7 @@ module ActionCableNotifications
           if packet[:msg].in? ['upsert_many']
             data = packet[:data]
           else
-            data = [packet[:data].merge({id: packet[:id]})]
+            data = [(packet[:data] || {}).merge({id: packet[:id]})]
           end
 
           packet_validator = HashDB::Base.new(data)
