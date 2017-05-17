@@ -38,7 +38,7 @@ class CableNotifications.Collection
 
   # Public methods
   #######################################
-  constructor: (@store, @name, @tableName, @callbacks) ->
+  constructor: (@store, @name, @tableName=name, @callbacks) ->
     # Data storage array
     @data = []
     # Channel used to sync with upstream collection
@@ -51,6 +51,9 @@ class CableNotifications.Collection
     @trackedRecords = []
 
     @callbacks?.initialize?.call(this)
+
+  # Sets the callbacks for collection after initialization
+  setCallbacks: (@callbacks) ->
 
   # Sync collection to ActionCable Channel
   syncToChannel: (@channel) ->
@@ -93,7 +96,7 @@ class CableNotifications.Collection
       record
 
   # Creates a new record
-  create: (fields={}) ->
+  create: (fields={}, options={}) ->
     record = _.find(@data, {id: fields.id})
     if record
       console.warn("[create] Not expected to find an existing record with id #{fields.id}")
@@ -108,6 +111,7 @@ class CableNotifications.Collection
     if !@sync
       @data.push (fields)
       @callbacks?.create?.call(this, fields)
+      @callbacks?.changed?.call(this, @data) unless options.batching
 
     upstream.call(this, "create", {fields: fields})
     fields
@@ -117,20 +121,21 @@ class CableNotifications.Collection
     record = _.find(@data, selector)
     if !record
       if options.upsert
-        @create(fields)
+        @create(fields, options)
       else
         console.warn("[update] Couldn't find a matching record:", selector)
     else
       if !@sync
         @callbacks?.update?.call(this, selector, fields, options)
         _.extend(record, fields)
+        @callbacks?.changed?.call(this, @data) unless options.batching
 
       upstream.call(this, "update", {id: record.id, fields: fields})
       record
 
   # Update an existing record or inserts a new one if there is no match
-  upsert: (selector={}, fields) ->
-    @update(selector, fields, {upsert: true})
+  upsert: (selector={}, fields, options={}) ->
+    @update(selector, fields, _.extend(options, {upsert: true}))
 
   # Destroy an existing record
   destroy: (selector={}) ->
@@ -142,6 +147,7 @@ class CableNotifications.Collection
       if !@sync
         @data.splice(index, 1)
         @callbacks?.destroy?.call(this, selector)
+        @callbacks?.changed?.call(this, @data) unless options.batching
 
       upstream.call(this, "destroy", {id: record.id})
       record
