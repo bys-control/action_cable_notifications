@@ -1,7 +1,7 @@
 PATH
   remote: ../..
   specs:
-    action_cable_notifications (0.1.28)
+    action_cable_notifications (0.1.30)
       lodash-rails (>= 4.15.0)
       rails (>= 5.0.0.1)
 
