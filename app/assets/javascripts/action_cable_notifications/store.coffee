@@ -16,10 +16,10 @@ class CableNotifications.Store
   # Then call original callback
   packetReceived = (channelInfo) ->
     (packet) ->
-      if packet?.collection
+      if packet?.publication
         # Search if there is a collection in this Store that receives packets from the server
         collection = _.find(channelInfo.collections,
-          {tableName: packet.collection})
+          {publication: packet.publication})
         if collection
           dispatchPacket.call(this, packet, collection)
       channelInfo.callbacks.received?.apply(channelInfo.channel, arguments)
@@ -56,12 +56,11 @@ class CableNotifications.Store
   #######################################
 
   # Register a new collection
-  registerCollection: (name, channel, tableName, actions) ->
-    tableName = name unless tableName
+  registerCollection: (name, channel, publication=name, actions) ->
     if @collections[name]
       console.warn "[registerCollection]: Collection '#{name}' already exists"
     else
-      @collections[name] = new CableNotifications.Collection(this, name, tableName, actions)
+      @collections[name] = new CableNotifications.Collection(this, name, publication, actions)
       if channel
         @syncToChannel(channel, @collections[name])
 

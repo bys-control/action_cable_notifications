@@ -4,7 +4,7 @@ class CableNotifications.Collection
   upstream = (command, params={}) ->
     if @sync
       cmd =
-        collection: @tableName
+        publication: @publication
         command: command
         params: params
 
@@ -38,7 +38,7 @@ class CableNotifications.Collection
 
   # Public methods
   #######################################
-  constructor: (@store, @name, @tableName=name, @callbacks) ->
+  constructor: (@store, @name, @publication=name, callbacks) ->
     # Data storage array
     @data = []
     # Channel used to sync with upstream collection

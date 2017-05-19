@@ -15,15 +15,15 @@ class CableNotifications.Store.DefaultCallbacks
     collection.update({id: packet.id}, packet.data)
 
   update_many: (packet, collection) ->
-    _.each packet.data, (fields, index, collection) ->
-      collection.update({id: fields.id}, fields, {batching: index<collection.length-1})
+    _.each packet.data, (fields, index, records) ->
+      collection.update({id: fields.id}, fields, {batching: index<records.length-1})
 
   upsert: (packet, collection) ->
     collection.upsert({id: packet.id}, packet.data)
 
   upsert_many: (packet, collection) ->
-    _.each packet.data, (fields, index, collection) ->
-      collection.upsert({id: fields.id}, fields, {batching: index<collection.length-1})
+    _.each packet.data, (fields, index, records) ->
+      collection.upsert({id: fields.id}, fields, {batching: index<records.length-1})
 
   destroy: (packet, collection) ->
     collection.destroy({id: packet.id})

@@ -18,43 +18,46 @@ module ActionCableNotifications
     #
     # @param [Hash] data Contains command to be executed and its parameters
     # {
-    #   "collection": "model.model_name.collection"
+    #   "publication": "model.model_name.name"
     #   "command": "fetch"
     #   "params": {}
     # }
     def action(data)
       data.deep_symbolize_keys!
 
-      channel_options = @ActionCableNotificationsOptions[data[:collection]]
+      publication = data[:publication]
+      channel_options = @ChannelPublications[publication]
       if channel_options
         model = channel_options[:model]
-        broadcasting = channel_options[:broadcasting]
-        model_options = model.ActionCableNotificationsOptions[broadcasting]
+        model_options = model.ChannelPublications[publication]
+        params = data[:params]
+        command = data[:command]
 
-        params = {
+        action_params = {
+          publication: publication,
           model: model,
           model_options: model_options,
           options: channel_options,
-          params: data[:params],
-          command: data[:command]
+          params: params,
+          command: command
         }
 
-        case data[:command]
+        case command
         when "fetch"
-          fetch(params)
+          fetch(action_params)
         when "create"
-          create(params)
+          create(action_params)
         when "update"
-          update(params)
+          update(action_params)
         when "destroy"
-          destroy(params)
+          destroy(action_params)
         end
       else
         response = {
-          collection: data[:collection],
+          publication: publication,
           msg: 'error',
-          command: data[:command],
-          error: "Collection '#{data[:collection]}' does not exist."
+          command: command,
+          error: "Stream for publication '#{publication}' does not exist in channel '#{self.channel_name}'."
         }
 
         # Send error notification to the client
@@ -64,7 +67,7 @@ module ActionCableNotifications
 
     def initialize(*args)
       @collections = {}
-      @ActionCableNotificationsOptions = {}
+      @ChannelPublications = {}
       super
     end
 
@@ -94,9 +97,9 @@ module ActionCableNotifications
     #
     def stream_notifications_for(model, options = {})
 
-      # Default options
+      # Default publication options
       options = {
-        broadcasting: model.model_name.collection,
+        publication: model.model_name.name,
         cache: false,
         model_options: {},
         scope: :all
@@ -104,30 +107,34 @@ module ActionCableNotifications
 
       # These options cannot be overridden
       options[:model] = model
-      # options[:channel] = self
-      model_name = model.model_name.collection
 
-      # Sets channel options
-      @ActionCableNotificationsOptions[model_name] = options
+      publication = options[:publication]
 
-      # Checks if model already includes notification callbacks
-      if !model.respond_to? :ActionCableNotificationsOptions
-        model.send('include', ActionCableNotifications::Model)
+      # Checks if the publication already exists in the channel
+      if not @ChannelPublications.include?(publication)
+        # Sets channel options
+        @ChannelPublications[publication] = options
+
+        # Checks if model already includes notification callbacks
+        if !model.respond_to? :ChannelPublications
+          model.send('include', ActionCableNotifications::Model)
+        end
+
+        # Sets broadcast options if they are not already present in the model
+        if not model.ChannelPublications.key? publication
+          model.broadcast_notifications_from publication, options[:model_options]
+        else # Reads options configuracion from model
+          options[:model_options] = model.ChannelPublications[publication]
+        end
+
+        # Start streaming
+        stream_from publication, coder: ActiveSupport::JSON do |packet|
+          packet.merge!({publication: publication})
+          transmit_packet(packet, options)
+        end
+        # XXX: Transmit initial data
+
       end
-
-      # Sets broadcast options if they are not already present in the model
-      if not model.ActionCableNotificationsOptions.key? options[:broadcasting]
-        model.broadcast_notifications_from options[:broadcasting], options[:model_options]
-      else # Reads options configuracion from model
-        options[:model_options] = model.ActionCableNotificationsOptions[options[:broadcasting]]
-      end
-
-      # Start streaming
-      stream_from options[:broadcasting], coder: ActiveSupport::JSON do |packet|
-        transmit_packet(packet, options)
-      end
-
-      # XXX: Transmit initial data
     end
 
     #

@@ -48,7 +48,7 @@ stream_notifications_for(model, options = {}, &block)
 * options: **(Hash)** - Options to be used for configuracion. Default options are:
 ```ruby
 {
-  broadcasting: model.model_name.collection, # Name of the pubsub stream
+  publication: model.model_name.collection, # Name of the pubsub stream
   params: params,                            # Params sent when client subscribes
   cache: false,                              # Turn off server-side cache of client-side data
   model_options: {

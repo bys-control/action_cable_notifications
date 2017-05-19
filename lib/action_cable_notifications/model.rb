@@ -4,8 +4,8 @@ module ActionCableNotifications
 
     included do
       # Action cable notification options storage
-      class_attribute :ActionCableNotificationsOptions
-      self.ActionCableNotificationsOptions = {}
+      class_attribute :ChannelPublications
+      self.ChannelPublications = {}
 
       # Register Callbacks
       before_update :prepare_update
@@ -19,10 +19,10 @@ module ActionCableNotifications
       #
       # Sets or removes notificacions options for Active Record model
       #
-      # @param [sym] broadcasting Topic name to broadcast in
+      # @param [sym] publication Topic name to broadcast in
       # @param [hash] options Hash containing notification options
       #
-      def broadcast_notifications_from ( broadcasting, options = {} )
+      def broadcast_notifications_from ( publication, options = {} )
         # Default options
         options = {
           actions: [:create, :update, :destroy],
@@ -31,7 +31,7 @@ module ActionCableNotifications
           records: []
           }.merge(options)
 
-        self.ActionCableNotificationsOptions[broadcasting.to_s] = options
+        self.ChannelPublications[publication.to_s] = options
       end
 
       #
@@ -50,19 +50,17 @@ module ActionCableNotifications
       #
       # Retrieves initial values to be sent to clients upon subscription
       #
-      # @param [Sym] broadcasting Name of broadcasting stream
+      # @param [Sym] publication Name of publication stream
       #
       # @return [Hash] Hash containing the results in the following format:
       # {
-      #   collection: self.model_name.collection,
       #   msg: 'add_collection',
       #   data: self.scoped_collection(options[:scope])
       # }
-      def notify_initial ( broadcasting )
-        options = self.ActionCableNotificationsOptions[broadcasting.to_s]
+      def notify_initial ( publication )
+        options = self.ChannelPublications[publication.to_s]
         if options.present?
           {
-            collection: self.model_name.collection,
             msg: 'upsert_many',
             data: self.scoped_collection(options[:scope])
           }
@@ -74,12 +72,11 @@ module ActionCableNotifications
     # Broadcast notifications when a new record is created
     #
     def notify_create
-      self.ActionCableNotificationsOptions.each do |broadcasting, options|
+      self.ChannelPublications.each do |publication, options|
         if options[:actions].include? :create
           # Checks if record is within scope before broadcasting
           if options[:scope]==:all or self.class.scoped_collection(options[:scope]).where(id: self.id).present?
-            ActionCable.server.broadcast broadcasting,
-              collection: self.model_name.collection,
+            ActionCable.server.broadcast publication,
               msg: 'create',
               id: self.id,
               data: self
@@ -89,7 +86,7 @@ module ActionCableNotifications
     end
 
     def prepare_update
-      self.ActionCableNotificationsOptions.each do |broadcasting, options|
+      self.ChannelPublications.each do |publication, options|
         if options[:actions].include? :update
           if options[:scope]==:all
             options[:records].push self
@@ -117,7 +114,7 @@ module ActionCableNotifications
 
       # Checks if there are changes in the model
       if !changes.empty?
-        self.ActionCableNotificationsOptions.each do |broadcasting, options|
+        self.ChannelPublications.each do |publication, options|
           if options[:actions].include? :update
             # Checks if previous record was within scope
             record = options[:records].detect{|r| r.id==self.id}
@@ -148,22 +145,19 @@ module ActionCableNotifications
                 changes.select!{|k,v| record.respond_to?(k)}
 
                 if !changes.empty?
-                  ActionCable.server.broadcast broadcasting,
-                    collection: self.model_name.collection,
+                  ActionCable.server.broadcast publication,
                     msg: 'update',
                     id: self.id,
                     data: changes
                 end
               else
-                ActionCable.server.broadcast broadcasting,
-                  collection: self.model_name.collection,
+                ActionCable.server.broadcast publication,
                   msg: 'create',
                   id: record.id,
                   data: record
               end
             elsif was_in_scope # checks if needs to delete the record if its no longer in scope
-              ActionCable.server.broadcast broadcasting,
-                collection: self.model_name.collection,
+              ActionCable.server.broadcast publication,
                 msg: 'destroy',
                 id: self.id
             end
@@ -176,12 +170,11 @@ module ActionCableNotifications
     # Broadcast notifications when a record is destroyed.
     #
     def notify_destroy
-      self.ActionCableNotificationsOptions.each do |broadcasting, options|
+      self.ChannelPublications.each do |publication, options|
         if options[:scope]==:all or options[:actions].include? :destroy
           # Checks if record is within scope before broadcasting
           if options[:scope]==:all or self.class.scoped_collection(options[:scope]).where(id: self.id).present?
-            ActionCable.server.broadcast broadcasting,
-              collection: self.model_name.collection,
+            ActionCable.server.broadcast publication,
               msg: 'destroy',
               id: self.id
           end

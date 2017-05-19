@@ -21,12 +21,13 @@ module ActionCableNotifications
                     to_a() rescue []
 
           response = {
-            collection: data[:model].model_name.collection,
+            publication: data[:publication],
             msg: 'upsert_many',
             data: results
           }
         rescue Exception => e
           response = {
+            publication: data[:publication],
             collection: data[:model].model_name.collection,
             msg: 'error',
             command: data[:command],
