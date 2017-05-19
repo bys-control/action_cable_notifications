@@ -4,7 +4,7 @@
 //= require './vue'
 
 var store = App.cableNotifications.registerStore("defaultStore")
-var todosCollection = store.registerCollection("todos", App.todo)
+var todosCollection = store.registerCollection("Todo", App.todo)
 
 // DB persistence
 var todoStorage = {

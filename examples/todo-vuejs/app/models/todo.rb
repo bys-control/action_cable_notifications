@@ -12,8 +12,5 @@
 class Todo < ApplicationRecord
   include ActionCableNotifications::Model
 
-  broadcast_notifications_from self.model_name.collection,
-    scope: {
-        select: [:id, :title, :completed]
-    }
+  broadcast_notifications_from self.model_name.collection
 end
