@@ -50,10 +50,20 @@ class CableNotifications.Collection
     # Stores records that needs to be tracked when inserted into the collection
     @trackedRecords = []
 
+    @callbacks = {}
+
+    @observeChanges(callbacks)
+
     @callbacks?.initialize?.call(this)
 
-  # Sets the callbacks for collection after initialization
-  setCallbacks: (@callbacks) ->
+  # Update the callback stack for collection
+  observeChanges: (new_callbacks) ->
+    _.each(new_callbacks, (cb, name) =>
+      old_cb = @callbacks?[name]
+      @callbacks[name] = () ->
+        cb.apply(this, arguments)
+        old_cb?.apply(this, arguments)
+    )
 
   # Sync collection to ActionCable Channel
   syncToChannel: (@channel) ->
