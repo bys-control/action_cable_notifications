@@ -13,6 +13,16 @@ module ActionCableNotifications
       after_create :notify_create
       after_destroy :notify_destroy
 
+      def record_within_scope records
+        if records.respond_to?(:where)
+          found_record = records.where(id: self.id)
+        elsif records.respond_to?(:detect) and (found_record = records.detect{|e| e["id"]==self.id})
+          found_record
+        else
+          nil
+        end
+      end
+
     end
 
     class_methods do
@@ -74,8 +84,10 @@ module ActionCableNotifications
     def notify_create
       self.ChannelPublications.each do |publication, options|
         if options[:actions].include? :create
-          # Checks if record is within scope before broadcasting
-          if options[:scope]==:all or self.class.scoped_collection(options[:scope]).where(id: self.id).present?
+          # Checks if records is within scope before broadcasting
+          records = self.class.scoped_collection(options[:scope])
+
+          if options[:scope]==:all or record_within_scope(records)
             ActionCable.server.broadcast publication,
               msg: 'create',
               id: self.id,
@@ -91,7 +103,7 @@ module ActionCableNotifications
           if options[:scope]==:all
             options[:records].push self
           else
-            record = self.class.scoped_collection(options[:scope]).where(id: self.id)
+            record = record_within_scope(self.class.scoped_collection(options[:scope]))
             if record.present?
               options[:records].push record.first
             end
@@ -128,7 +140,7 @@ module ActionCableNotifications
                 record = self
                 is_in_scope = true
               else
-                record = self.class.scoped_collection(options[:scope]).where(id: self.id)
+                record = record_within_scope(self.class.scoped_collection(options[:scope]))
                 if record.present?
                   record = record.first
                   is_in_scope = true
@@ -173,7 +185,7 @@ module ActionCableNotifications
       self.ChannelPublications.each do |publication, options|
         if options[:scope]==:all or options[:actions].include? :destroy
           # Checks if record is within scope before broadcasting
-          if options[:scope]==:all or self.class.scoped_collection(options[:scope]).where(id: self.id).present?
+          if options[:scope]==:all or record_within_scope(self.class.scoped_collection(options[:scope])).present?
             ActionCable.server.broadcast publication,
               msg: 'destroy',
               id: self.id
