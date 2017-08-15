@@ -15,7 +15,7 @@ module ActionCableNotifications
 
       def record_within_scope records
         if records.respond_to?(:where)
-          found_record = records.where(id: self.id)
+          found_record = records.where(id: self.id).first
         elsif records.respond_to?(:detect) and (found_record = records.detect{|e| e["id"]==self.id})
           found_record
         else
@@ -105,7 +105,7 @@ module ActionCableNotifications
           else
             record = record_within_scope(self.class.scoped_collection(options[:scope]))
             if record.present?
-              options[:records].push record.first
+              options[:records].push record
             end
           end
         end
@@ -129,8 +129,9 @@ module ActionCableNotifications
         self.ChannelPublications.each do |publication, options|
           if options[:actions].include? :update
             # Checks if previous record was within scope
-            record = options[:records].detect{|r| r.id==self.id}
+            record = record_within_scope(options[:records])
             was_in_scope = record.present?
+
             options[:records].delete(record) if was_in_scope
 
             # Checks if current record is within scope
@@ -142,7 +143,6 @@ module ActionCableNotifications
               else
                 record = record_within_scope(self.class.scoped_collection(options[:scope]))
                 if record.present?
-                  record = record.first
                   is_in_scope = true
                 end
               end
