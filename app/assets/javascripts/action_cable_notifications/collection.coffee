@@ -148,7 +148,7 @@ class CableNotifications.Collection
     @update(selector, fields, _.extend(options, {upsert: true}))
 
   # Destroy an existing record
-  destroy: (selector={}) ->
+  destroy: (selector={}, options={}) ->
     index = _.findIndex(@data, selector)
     if index < 0
       console.warn("[destroy] Couldn't find a matching record:", selector)
