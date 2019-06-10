@@ -119,8 +119,8 @@ class CableNotifications.Collection
       @data.push (fields)
       @callbacks?.create?.call(this, fields)
       @callbacks?.changed?.call(this, @data) unless options.batching
-
-    upstream.call(this, "create", {fields: fields})
+    else
+      upstream.call(this, "create", {fields: fields})
     fields
 
   # Update an existing record
@@ -136,8 +136,8 @@ class CableNotifications.Collection
         @callbacks?.update?.call(this, selector, fields, options)
         _.extend(record, fields)
         @callbacks?.changed?.call(this, @data) unless options.batching
-
-      upstream.call(this, "update", {id: record.id, fields: fields})
+      else
+        upstream.call(this, "update", {id: record.id, fields: fields})
       record
 
   # Update an existing record or inserts a new one if there is no match
@@ -155,6 +155,6 @@ class CableNotifications.Collection
         @data.splice(index, 1)
         @callbacks?.destroy?.call(this, selector)
         @callbacks?.changed?.call(this, @data) unless options.batching
-
-      upstream.call(this, "destroy", {id: record.id})
+      else
+        upstream.call(this, "destroy", {id: record.id})
       record
