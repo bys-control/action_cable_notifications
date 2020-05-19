@@ -13,11 +13,16 @@ module ActionCableNotifications
 
         # Get results using provided parameters and model configured scope
         begin
+          temp_scope = data[:model_options][:scope].deep_dup || {}
+          if (data[:model_options][:scope].is_a? Hash) && (data[:model_options][:scope][:where].is_a? Hash)
+            #temp_scope = temp_scope.merge(params)
+            temp_scope[:where].each{|k,v| v.is_a?(Proc) ? temp_scope[:where][k]=v.call() : nil }
+          end
           results = data[:model].
                     select(params[:select] || []).
                     limit(params[:limit]).
                     where(params[:where] || {}).
-                    scoped_collection(data[:model_options][:scope]).
+                    scoped_collection(temp_scope).
                     to_a() rescue []
 
           response = {
