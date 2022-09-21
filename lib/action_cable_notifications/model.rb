@@ -157,21 +157,21 @@ module ActionCableNotifications
                 changes.select!{|k,v| record.respond_to?(k)}
 
                 if !changes.empty?
-                  ActionCable.server.broadcast publication,
-                    msg: 'update',
+                  ActionCable.server.broadcast (publication,
+                    {msg: 'update',
                     id: self.id,
-                    data: changes
+                    data: changes})
                 end
               else
-                ActionCable.server.broadcast publication,
-                  msg: 'create',
+                ActionCable.server.broadcast (publication,
+                  {msg: 'create',
                   id: record.id,
-                  data: record
+                  data: record})
               end
             elsif was_in_scope # checks if needs to delete the record if its no longer in scope
-              ActionCable.server.broadcast publication,
-                msg: 'destroy',
-                id: self.id
+              ActionCable.server.broadcast (publication,
+                {msg: 'destroy',
+                id: self.id})
             end
           end
         end
