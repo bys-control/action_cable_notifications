@@ -89,9 +89,11 @@ module ActionCableNotifications
 
           if options[:scope]==:all or record_within_scope(records)
             ActionCable.server.broadcast publication,
-              msg: 'create',
-              id: self.id,
-              data: self
+              {
+                msg: 'create',
+                id: self.id,
+                data: self
+              }
           end
         end
       end
@@ -157,21 +159,27 @@ module ActionCableNotifications
                 changes.select!{|k,v| record.respond_to?(k)}
 
                 if !changes.empty?
-                  ActionCable.server.broadcast (publication,
-                    {msg: 'update',
-                    id: self.id,
-                    data: changes})
+                  ActionCable.server.broadcast publication,
+                    {
+                      msg: 'update',
+                      id: self.id,
+                      data: changes
+                    }
                 end
               else
-                ActionCable.server.broadcast (publication,
-                  {msg: 'create',
-                  id: record.id,
-                  data: record})
+                ActionCable.server.broadcast publication,
+                  {
+                    msg: 'create',
+                    id: record.id,
+                    data: record
+                  }
               end
             elsif was_in_scope # checks if needs to delete the record if its no longer in scope
-              ActionCable.server.broadcast (publication,
-                {msg: 'destroy',
-                id: self.id})
+              ActionCable.server.broadcast publication,
+                {
+                  msg: 'destroy',
+                  id: self.id
+                }
             end
           end
         end
@@ -187,8 +195,10 @@ module ActionCableNotifications
           # Checks if record is within scope before broadcasting
           if options[:scope]==:all or record_within_scope(self.class.scoped_collection(options[:scope])).present?
             ActionCable.server.broadcast publication,
-              msg: 'destroy',
-              id: self.id
+              {
+                msg: 'destroy',
+                id: self.id
+              }
           end
         end
       end
