@@ -98,7 +98,7 @@ module ActionCableNotifications
 
         if record.present?
           begin
-            record.update(params[:fields])
+            record.update_attributes(params[:fields])
           rescue Exception => e
             error = e.message
           end
